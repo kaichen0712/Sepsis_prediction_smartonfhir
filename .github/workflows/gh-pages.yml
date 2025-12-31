@@ -1,8 +1,9 @@
 name: Deploy to GitHub Pages
+
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch: {}
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,18 +18,32 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Remove API routes (not supported in static export)
+        run: rm -rf app/api
+
       - name: Build static export for GH Pages
         run: npm run build:gh
         env:
           GITHUB_PAGES: "true"
-          TAILWIND_DISABLE_LIGHTNINGCSS: "true"   # 👈 disable lightningcss in CI
-      - uses: actions/upload-pages-artifact@v3
+          TAILWIND_DISABLE_LIGHTNINGCSS: "true"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
 
@@ -39,5 +54,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
+      - name: Deploy
+        id: deployment
         uses: actions/deploy-pages@v4
