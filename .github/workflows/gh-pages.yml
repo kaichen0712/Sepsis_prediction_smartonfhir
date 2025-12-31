@@ -1,8 +1,8 @@
-name: Deploy to GitHub Pages
+name: Deploy Next.js to GitHub Pages
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["master"]
   workflow_dispatch:
 
 permissions:
@@ -24,23 +24,22 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
           cache: npm
 
-      - name: Configure Pages
+      - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Install deps
+      - name: Install dependencies
         run: npm ci
 
       - name: Remove API routes (not supported in static export)
         run: rm -rf app/api
 
-      - name: Build static export for GH Pages
+      - name: Build with Next.js
         run: npm run build:gh
         env:
           GITHUB_PAGES: "true"
-          TAILWIND_DISABLE_LIGHTNINGCSS: "true"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -54,6 +53,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
