@@ -56,11 +56,6 @@ type ModelPayloadItem = {
   resp: number | null
 }
 
-type PredictionRequest = {
-  payload: ModelPayloadItem[]
-  token?: string
-}
-
 function computeAge(birthDate: string | null, targetDate: string): number | null {
   if (!birthDate) return null
   const bd = new Date(birthDate)
@@ -223,19 +218,37 @@ function buildModelPayload(
 }
 
 async function fetchPrediction(payload: ModelPayloadItem[], token?: string) {
-  const body: PredictionRequest = { payload }
-  if (token) body.token = token
-  const res = await fetch("/api/sepsis-risk", {
+  const trimmed = token?.trim()
+  if (!trimmed) throw new Error("Token is required")
+
+  const res = await fetch("https://theheal.tech/toNYCU/sepsis", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${trimmed}`,
+    },
+    // 注意：遠端 API 要的是「陣列」，不是 { payload, token }
+    body: JSON.stringify(payload),
   })
-  const data = await res.json()
+
+  const text = await res.text()
+
   if (!res.ok) {
-    throw new Error(data?.error || "Prediction failed")
+    throw new Error(`Model request failed (${res.status}): ${text.slice(0, 200)}`)
   }
-  return data as { prediction: number | null; raw?: unknown }
+
+  // 避免又遇到 HTML / 非 JSON 時直接炸掉，看得到內容
+  let data: any
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    throw new Error(`Expected JSON but got: ${text.slice(0, 120)}`)
+  }
+
+  const prediction = data?.processed_data?.[0]?.sepsis ?? null
+  return { prediction, raw: data } as { prediction: number | null; raw?: unknown }
 }
+
 
 function formatValue(value: number | null) {
   return value === null || value === undefined ? "N/A" : String(value)
