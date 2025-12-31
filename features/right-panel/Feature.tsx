@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import MedicalNoteFeature from "@/features/medical-note/Feature"
+import SepsisRiskFeature from "@/features/sepsis-risk/Feature"
 import { DataSelectionPanel } from "@/features/data-selection/components/DataSelectionPanel"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
 import { useDataSelection, DataSelection } from "@/features/data-selection/hooks/useDataSelection"
@@ -41,8 +42,9 @@ export function RightPanelFeature() {
       className="h-full flex flex-col"
       defaultValue="medicalNote"
     >
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="medicalNote">Medical Note</TabsTrigger>
+        <TabsTrigger value="sepsisRisk">Sepsis Risk</TabsTrigger>
         <TabsTrigger value="dataSelection">Data Selection</TabsTrigger>
       </TabsList>
       
@@ -70,6 +72,14 @@ export function RightPanelFeature() {
               filters={filters}
               onFiltersChange={handleFiltersChange}
             />
+          </div>
+        </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="sepsisRisk" className="flex-1 mt-0 pt-4">
+        <ScrollArea className="h-full pr-2">
+          <div className="space-y-4">
+            <SepsisRiskFeature />
           </div>
         </ScrollArea>
       </TabsContent>

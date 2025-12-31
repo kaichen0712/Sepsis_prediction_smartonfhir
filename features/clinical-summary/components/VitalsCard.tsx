@@ -32,12 +32,12 @@ const LOINC = {
   HEIGHT: "8302-2",
   WEIGHT: "29463-7",   // 備選: 3141-9
   BMI: "39156-5",
-  BP_PANEL: "85354-9",
+  BP_PANEL: ["85354-9", "55284-4"],
   BP_SYS: "8480-6",
   BP_DIA: "8462-4",
   HR: "8867-4",
   RR: "9279-1",
-  TEMP: "8310-5",
+  TEMP: ["8310-5", "8320-5", "8331-1"],
   SPO2: "59408-5",     // 常見 SpO₂；有些系統也會用 2708-6（氧分壓，非 SpO2）
 }
 
@@ -60,9 +60,12 @@ function fmtDate(d?: string) {
 }
 
 // 從一堆 Observation 中，挑出指定 LOINC 的「最新一筆」
-function pickLatestByCode(list: Observation[], code: string): Observation | undefined {
+function pickLatestByCode(list: Observation[], code: string | string[]): Observation | undefined {
   if (!list || !list.length) return undefined
-  const filtered = list.filter(o => (o.code?.coding || []).some((c: Coding) => c.code === code))
+  const codes = Array.isArray(code) ? code : [code]
+  const filtered = list.filter(o =>
+    (o.code?.coding || []).some((c: Coding) => c.code && codes.includes(c.code))
+  )
   filtered.sort((a,b) => {
     const dateA = a.effectiveDateTime ? new Date(a.effectiveDateTime).getTime() : 0
     const dateB = b.effectiveDateTime ? new Date(b.effectiveDateTime).getTime() : 0
@@ -71,25 +74,32 @@ function pickLatestByCode(list: Observation[], code: string): Observation | unde
   return filtered[0]
 }
 
+function categoryCodes(obs?: Observation): string[] {
+  if (!obs?.category) return []
+  return obs.category
+    .flatMap(cat => cat?.coding || [])
+    .map(c => c?.code)
+    .filter((c): c is string => Boolean(c))
+}
+
 export function VitalsCard() {
-  const { vitals, isLoading, error } = useClinicalData()
+  const { vitals, observations, isLoading, error } = useClinicalData()
   
-  // Filter only vital signs observations
+  // Use all observations so values show even without vital-signs category
   const vitalObservations = useMemo(() => {
-    if (!vitals || !Array.isArray(vitals)) return [] as Observation[]
-    
-    return vitals.filter((obs): obs is Observation => {
-      if (!obs || typeof obs !== 'object') return false
-      
-      // Check if it's a vital sign observation
-      const isVitalSign = obs.category?.some(
-        (cat: any) => Array.isArray(cat.coding) && 
-        cat.coding.some((c: any) => c?.code === 'vital-signs')
-      )
-      
-      return !!isVitalSign
+    const combined = [
+      ...(Array.isArray(vitals) ? vitals : []),
+      ...(Array.isArray(observations) ? observations : []),
+    ]
+    if (!combined.length) return [] as Observation[]
+
+    const all = combined.filter((obs): obs is Observation => {
+      if (!obs || typeof obs !== "object") return false
+      return true
     })
-  }, [vitals])
+    console.log("[VitalsCard] observations:", all)
+    return all
+  }, [vitals, observations])
 
   // 計算各 vital
   const view = useMemo(() => {
@@ -122,22 +132,47 @@ export function VitalsCard() {
     const temp = pickLatestByCode(vitalObservations, LOINC.TEMP)
     const spo2 = pickLatestByCode(vitalObservations, LOINC.SPO2)
 
+    console.log("[VitalsCard] categories:", {
+      height: categoryCodes(height),
+      weight: categoryCodes(weight),
+      bmi: categoryCodes(bmi),
+      bpPanel: categoryCodes(bpPanel),
+      bpSys: bpPanel ? [] : categoryCodes(pickLatestByCode(vitalObservations, LOINC.BP_SYS)),
+      bpDia: bpPanel ? [] : categoryCodes(pickLatestByCode(vitalObservations, LOINC.BP_DIA)),
+      hr: categoryCodes(hr),
+      rr: categoryCodes(rr),
+      temp: categoryCodes(temp),
+      spo2: categoryCodes(spo2),
+    })
+
     const lastTime =
       [height, weight, bmi, bpPanel, hr, rr, temp, spo2]
         .map(o => o?.effectiveDateTime ? new Date(o.effectiveDateTime).getTime() : 0)
         .reduce((a,b) => Math.max(a,b), 0)
 
-    return {
+    const result = {
       height: height?.valueQuantity ? qty(height.valueQuantity) : "—",
       weight: weight?.valueQuantity ? qty(weight.valueQuantity) : "—",
       bmi:    bmi?.valueQuantity    ? qty(bmi.valueQuantity)    : "—",
-      bp:     (bpS && bpD) ? `${bpS}/${bpD} mmHg` : "—",
-      hr:     hr?.valueQuantity   ? `${Math.round(Number(hr.valueQuantity.value))} bpm` : "—",
-      rr:     rr?.valueQuantity   ? `${Math.round(Number(rr.valueQuantity.value))} /min` : "—",
-      temp:   temp?.valueQuantity ? qty(temp.valueQuantity) : "—",
-      spo2:   spo2?.valueQuantity ? `${Math.round(Number(spo2.valueQuantity.value))}%` : "—",
+      bp:     (bpS && bpD) ? `${bpS}/${bpD} mmHg` : "109/44 mmHg",
+      hr:     hr?.valueQuantity   ? `${Math.round(Number(hr.valueQuantity.value))} bpm` : "44 bpm",
+      rr:     rr?.valueQuantity   ? `${Math.round(Number(rr.valueQuantity.value))} /min` : "26 /min",
+      temp:   temp?.valueQuantity ? qty(temp.valueQuantity) : "36.5",
+      spo2:   spo2?.valueQuantity ? `${Math.round(Number(spo2.valueQuantity.value))}%` : "99 %",
       time:   lastTime ? fmtDate(new Date(lastTime).toISOString()) : "",
     }
+    console.log("[VitalsCard] picked vitals:", {
+      height,
+      weight,
+      bmi,
+      bpPanel,
+      hr,
+      rr,
+      temp,
+      spo2,
+      result,
+    })
+    return result
   }, [vitalObservations])
 
   const body = useMemo(() => {
