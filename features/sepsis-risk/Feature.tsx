@@ -217,38 +217,24 @@ function buildModelPayload(
   ]
 }
 
-async function fetchPrediction(payload: ModelPayloadItem[], token?: string) {
-  const trimmed = token?.trim()
-  if (!trimmed) throw new Error("Token is required")
-
-  const res = await fetch("https://theheal.tech/toNYCU/sepsis", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${trimmed}`,
-    },
-    // 注意：遠端 API 要的是「陣列」，不是 { payload, token }
-    body: JSON.stringify(payload),
-  })
+async function fetchPrediction(payload: ModelPayloadItem[]) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  const res = await fetch(
+    "https://sepsissmartonfhir-amhgcnfacgejhqhr.centralus-01.azurewebsites.net/api/sepsis",
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    }
+  )
 
   const text = await res.text()
+  if (!res.ok) throw new Error(`Proxy failed (${res.status}): ${text.slice(0, 200)}`)
 
-  if (!res.ok) {
-    throw new Error(`Model request failed (${res.status}): ${text.slice(0, 200)}`)
-  }
-
-  // 避免又遇到 HTML / 非 JSON 時直接炸掉，看得到內容
-  let data: any
-  try {
-    data = text ? JSON.parse(text) : null
-  } catch {
-    throw new Error(`Expected JSON but got: ${text.slice(0, 120)}`)
-  }
-
+  const data = JSON.parse(text)
   const prediction = data?.processed_data?.[0]?.sepsis ?? null
   return { prediction, raw: data } as { prediction: number | null; raw?: unknown }
 }
-
 
 function formatValue(value: number | null) {
   return value === null || value === undefined ? "N/A" : String(value)
@@ -334,7 +320,6 @@ export default function SepsisRiskFeature() {
     isLoading: vitalsLoading,
     error: vitalsError,
   } = useClinicalData()
-  const [token, setToken] = useState("")
   const [data, setData] = useState<SmartResult | null>(null)
   const [prediction, setPrediction] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -393,7 +378,7 @@ export default function SepsisRiskFeature() {
       setData(result)
       try {
         const payload = buildModelPayload(patientId, targetDate, result)
-        const modelResult = await fetchPrediction(payload, token.trim() || undefined)
+        const modelResult = await fetchPrediction(payload)
         setPrediction(modelResult.prediction ?? null)
       } catch (err) {
         setPrediction(null)
@@ -422,22 +407,18 @@ export default function SepsisRiskFeature() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border p-4">
-        <div className="text-sm font-semibold">Model Token</div>
-        <div className="mt-2 grid gap-3 md:grid-cols-[1fr_auto]">
-          <input
-            className="h-9 rounded-md border px-2 text-sm"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder="Paste bearer token (stored in memory only)"
-          />
-          <button
-            className="h-9 rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-60"
-            onClick={handleFetch}
-            disabled={loading || patientLoading || vitalsLoading}
-          >
-            {loading ? "Loading..." : "Use SMART Vitals"}
-          </button>
-        </div>
+        <div className="text-sm font-semibold">About Sepsis Prediction</div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          敗血症可能導致器官功能衰竭與危及生命。本頁籤會透過病患的生理監測資訊，
+          預測是否有敗血症風險。此模型的特點是不需檢驗數值，僅使用生理監測數值進行預測。
+        </p>
+        <button
+          className="mt-4 h-9 w-full rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-60"
+          onClick={handleFetch}
+          disabled={loading || patientLoading || vitalsLoading}
+        >
+          {loading ? "Loading..." : "Run Prediction"}
+        </button>
       </div>
 
       {hasFetched && (
@@ -459,23 +440,25 @@ export default function SepsisRiskFeature() {
               {predictionLabel}
             </div>
           )}
-          <div className="mt-2 text-xs text-muted-foreground">
-            1 = sepsis risk, 0 = normal
-          </div>
         </div>
         <div className="mt-4 space-y-4">
         <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold">Patient</div>
+          <div className="text-xs font-semibold">Patient (Model Inputs)</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Patient data sent to the model for prediction.
+          </div>
           <div className="mt-2 text-sm">
             <div>Patient ID : {data?.patientId ?? patientInfo?.id ?? "N/A"}</div>
             <div>Gender : {data?.patient.gender ?? patientInfo?.genderLabel ?? "N/A"}</div>
-            <div>Birth Date : {data?.patient.birthDate ?? patientInfo?.birthDate ?? "N/A"}</div>
             <div>Age : {patientInfo?.age ?? age ?? "N/A"}</div>
           </div>
         </div>
 
         <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold">Latest Vitals (SMART)</div>
+          <div className="text-xs font-semibold">Latest Vitals (Model Inputs)</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Physiologic measurements sent to the model.
+          </div>
           <div className="mt-1 text-xs text-muted-foreground">
             Source: {vitalsSource.label} ({vitalsSource.list.length})
           </div>
