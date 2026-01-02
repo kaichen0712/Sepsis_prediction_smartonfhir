@@ -76,10 +76,8 @@ Don’t refresh /smart/callback directly; always start from /smart/launch.
 - 詹彥杰：技術支援
 
 ## Demo (SMART on FHIR)
-- SMART Launcher: 
-https://launch.smarthealthit.org/
-- App Demo Launch URL:
- https://launch.smarthealthit.org/?launch_url=https%3A%2F%2Fkaichen0712.github.io%2FSepsis_prediction_smartonfhir%2Fsmart%2Flaunch&launch=WzAsIiIsIiIsIkFVVE8iLDAsMCwwLCIiLCIiLCIiLCIiLCIiLCIiLCIiLDAsMSwiIl0
+- SMART Launcher:  https://launch.smarthealthit.org/
+- App Demo Launch URL:  https://launch.smarthealthit.org/?launch_url=https%3A%2F%2Fkaichen0712.github.io%2FSepsis_prediction_smartonfhir%2Fsmart%2Flaunch&launch=WzAsIiIsIiIsIkFVVE8iLDAsMCwwLCIiLCIiLCIiLCIiLCIiLCIiLCIiLDAsMSwiIl0
 
 ## Credits
 P.S. 本專案核心是使用郭宜欣醫師的「medical-note-smart-on-fhir」修改而成。  
