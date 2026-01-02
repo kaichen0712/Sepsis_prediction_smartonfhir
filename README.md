@@ -1,4 +1,8 @@
-# Medical Note · SMART on FHIR (Next.js)
+# AI即時敗血症風險預測 Sepsis Risk
+
+敗血症可能導致器官功能衰竭與危及生命。本頁籤會透過病患的生理監測資訊，預測是否有敗血症風險。此模型的特點是不需檢驗數值，僅使用生理監測數值進行預測。
+
+## Medical Note · SMART on FHIR (Next.js)
 
 Minimal SMART on FHIR demo built with **Next.js App Router**, **shadcn/ui (Radix)**, and **fhirclient**.  
 Fetch Patient data from a SMART sandbox, record audio (Whisper), and generate GPT summaries.
