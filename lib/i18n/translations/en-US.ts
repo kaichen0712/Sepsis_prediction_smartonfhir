@@ -9,7 +9,7 @@
     separator: " · ",
   },
   header: {
-    title: "Sepsis Risk | Clinical Summary | Medical Note",
+    title: "AI Sepsis Risk Early Warning Platform",
   },
   tabs: {
     medicalNote: "Medical Note",

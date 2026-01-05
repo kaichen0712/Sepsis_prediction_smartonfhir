@@ -152,7 +152,7 @@ export function GptPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("medicalNote.gptResponseTitle")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("medicalNote.gptResponseTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <Textarea

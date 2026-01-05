@@ -140,7 +140,7 @@ export function DiagnosesCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("diagnoses.title")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("diagnoses.title")}</CardTitle>
       </CardHeader>
       <CardContent>{body}</CardContent>
     </Card>

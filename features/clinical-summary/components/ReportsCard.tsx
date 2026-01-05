@@ -288,7 +288,7 @@ export function ReportsCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t("reports.title")}</CardTitle>
+          <CardTitle className="text-slate-900 font-semibold">{t("reports.title")}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">{t("reports.loading")}</CardContent>
       </Card>
@@ -299,7 +299,7 @@ export function ReportsCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t("reports.title")}</CardTitle>
+          <CardTitle className="text-slate-900 font-semibold">{t("reports.title")}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-red-600">
           {t("reports.errorPrefix")} {error?.message || t("common.unknown")}
@@ -312,7 +312,7 @@ export function ReportsCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t("reports.title")}</CardTitle>
+          <CardTitle className="text-slate-900 font-semibold">{t("reports.title")}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">{t("reports.noReports")}</CardContent>
       </Card>
@@ -324,7 +324,7 @@ export function ReportsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("reports.title")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("reports.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">

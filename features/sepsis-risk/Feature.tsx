@@ -1,7 +1,7 @@
 // features/sepsis-risk/Feature.tsx
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
 import { usePatient } from "@/lib/providers/PatientProvider"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
@@ -308,7 +308,7 @@ function logVitalCategories(list: FHIRObservation[]) {
   })
 }
 
-export default function SepsisRiskFeature() {
+export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) {
   const { t } = useLanguage()
   const { patient, loading: patientLoading, error: patientError } = usePatient()
   const {
@@ -355,12 +355,12 @@ export default function SepsisRiskFeature() {
     setLoading(true)
     setError(null)
     setPredictionError(null)
-    setHasFetched(true)
     try {
       const patientId = patientInfo?.id?.trim()
       if (!patientId) {
         throw new Error(t("sepsisRisk.errors.patientUnavailable"))
       }
+      setHasFetched(true)
 
       const vitalsSource = pickVitalsSource(vitals, vitalSigns, observations)
       const latestVitals = extractLatestVitals(vitalsSource.list || [])
@@ -404,6 +404,13 @@ export default function SepsisRiskFeature() {
     }
   }
 
+  useEffect(() => {
+    if (!isActive) return
+    if (hasFetched || loading || patientLoading || vitalsLoading) return
+    if (!patientInfo?.id) return
+    void handleFetch()
+  }, [isActive, hasFetched, loading, patientLoading, vitalsLoading, patientInfo?.id])
+
   const age = data ? computeAge(data.patient.birthDate, data.targetDate) : null
   const vitalsSource = pickVitalsSource(vitals, vitalSigns, observations)
   const vitalsSourceLabel =
@@ -429,20 +436,22 @@ export default function SepsisRiskFeature() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border p-4">
-        <div className="text-sm font-semibold">{t("sepsisRisk.aboutTitle")}</div>
+        <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+          {t("sepsisRisk.aboutTitle")}
+        </div>
         <p className="mt-2 text-sm text-muted-foreground">{t("sepsisRisk.aboutDescription")}</p>
-        <button
-          className="mt-4 h-9 w-full rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-60"
-          onClick={handleFetch}
-          disabled={loading || patientLoading || vitalsLoading}
-        >
-          {loading ? t("common.loading") : t("sepsisRisk.runPrediction")}
-        </button>
+        {loading && (
+          <div className="mt-4 text-sm text-muted-foreground">
+            {t("common.loading")}
+          </div>
+        )}
       </div>
 
       {hasFetched && (
       <div className="rounded-lg border p-4">
-        <div className="text-sm font-semibold">{t("sepsisRisk.predictionTitle")}</div>
+        <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+          {t("sepsisRisk.predictionTitle")}
+        </div>
 
         {(error || patientError || vitalsError) && (
           <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -451,7 +460,9 @@ export default function SepsisRiskFeature() {
         )}
 
         <div className="mt-4 rounded-md border p-4">
-          <div className="text-sm font-semibold">{t("sepsisRisk.predictionResult")}</div>
+          <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+            {t("sepsisRisk.predictionResult")}
+          </div>
           {predictionError ? (
             <div className="mt-3 text-sm text-red-700">{predictionError}</div>
           ) : (
@@ -462,7 +473,9 @@ export default function SepsisRiskFeature() {
         </div>
         <div className="mt-4 space-y-4">
         <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold">{t("sepsisRisk.patientInputs")}</div>
+          <div className="text-xs font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+            {t("sepsisRisk.patientInputs")}
+          </div>
           <div className="mt-1 text-xs text-muted-foreground">
             {t("sepsisRisk.patientInputsDescription")}
           </div>
@@ -474,7 +487,9 @@ export default function SepsisRiskFeature() {
         </div>
 
         <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold">{t("sepsisRisk.latestVitals")}</div>
+          <div className="text-xs font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+            {t("sepsisRisk.latestVitals")}
+          </div>
           <div className="mt-1 text-xs text-muted-foreground">
             {t("sepsisRisk.latestVitalsDescription")}
           </div>

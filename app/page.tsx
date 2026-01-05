@@ -12,10 +12,15 @@ export default function Page() {
 
   return (
     <PatientProvider>
-      <div className="flex h-svh flex-col overflow-hidden">
-        <header className="shrink-0 border-b px-6 py-3 flex items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold">{t("header.title")}</h1>
-          <LanguageSwitcher />
+      <div className="flex h-svh flex-col overflow-hidden bg-slate-50">
+        <header className="shrink-0 border-b bg-white px-6 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div />
+          <h1 className="text-2xl md:text-3xl font-semibold text-center bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent">
+            {t("header.title")}
+          </h1>
+          <div className="justify-self-end">
+            <LanguageSwitcher />
+          </div>
         </header>
         <main className="grid flex-1 grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-2">
           {/* Left Panel - Clinical Summary */}

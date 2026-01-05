@@ -160,7 +160,7 @@ export function AllergiesCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("allergies.title")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("allergies.title")}</CardTitle>
       </CardHeader>
       <CardContent>{body}</CardContent>
     </Card>

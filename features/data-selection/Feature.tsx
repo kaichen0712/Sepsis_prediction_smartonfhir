@@ -60,7 +60,9 @@ export function DataSelectionFeature() {
       <div className="max-w-3xl mx-auto">
         <div className="space-y-6">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">{t("dataSelection.title")}</h1>
+            <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+              {t("dataSelection.title")}
+            </h1>
             <p className="text-sm text-muted-foreground">
               {t("dataSelection.description")}
             </p>

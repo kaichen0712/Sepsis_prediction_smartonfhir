@@ -66,7 +66,7 @@ export function PatientInfoCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t("patientInfo.title")}</CardTitle>
+          <CardTitle className="text-slate-900 font-semibold">{t("patientInfo.title")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="h-5 w-3/4 animate-pulse bg-muted rounded" />
@@ -99,7 +99,7 @@ export function PatientInfoCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t("patientInfo.title")}</CardTitle>
+          <CardTitle className="text-slate-900 font-semibold">{t("patientInfo.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-destructive">
@@ -113,7 +113,7 @@ export function PatientInfoCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("patientInfo.title")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("patientInfo.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="grid grid-cols-3 gap-2">

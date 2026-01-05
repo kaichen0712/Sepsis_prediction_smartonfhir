@@ -9,7 +9,7 @@
     separator: " · ",
   },
   header: {
-    title: "敗血症風險 | 臨床摘要 | 病歷摘要",
+    title: "AI即時敗血症風險預警平台",
   },
   tabs: {
     medicalNote: "病歷摘要",

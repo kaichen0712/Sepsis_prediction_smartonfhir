@@ -301,7 +301,7 @@ export function MedListCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("medications.title")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("medications.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">{body}</CardContent>
     </Card>

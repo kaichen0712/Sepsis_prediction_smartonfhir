@@ -204,7 +204,7 @@ export function VitalsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("vitals.title")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("vitals.title")}</CardTitle>
       </CardHeader>
       <CardContent>{body}</CardContent>
     </Card>

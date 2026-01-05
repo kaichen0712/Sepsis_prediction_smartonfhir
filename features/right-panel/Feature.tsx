@@ -23,7 +23,7 @@ type ClinicalData = {
 }
 
 export function RightPanelFeature() {
-  const [activeTab, setActiveTab] = useState("medicalNote")
+  const [activeTab, setActiveTab] = useState("sepsisRisk")
   const { t } = useLanguage()
   const clinicalData = useClinicalData()
   const { 
@@ -42,7 +42,7 @@ export function RightPanelFeature() {
       value={activeTab} 
       onValueChange={setActiveTab}
       className="h-full flex flex-col"
-      defaultValue="medicalNote"
+      defaultValue="sepsisRisk"
     >
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="sepsisRisk">{t("tabs.sepsisRisk")}</TabsTrigger>
@@ -81,7 +81,7 @@ export function RightPanelFeature() {
       <TabsContent value="sepsisRisk" className="flex-1 mt-0 pt-4">
         <ScrollArea className="h-full pr-2">
           <div className="space-y-4">
-            <SepsisRiskFeature />
+            <SepsisRiskFeature isActive={activeTab === "sepsisRisk"} />
           </div>
         </ScrollArea>
       </TabsContent>

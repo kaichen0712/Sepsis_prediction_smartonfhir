@@ -61,7 +61,7 @@ export function AsrPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("medicalNote.asrTitle")}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{t("medicalNote.asrTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <ReactMediaRecorder

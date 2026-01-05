@@ -13,7 +13,7 @@ export function PromptEditor({ title }: { title?: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{heading}</CardTitle>
+        <CardTitle className="text-slate-900 font-semibold">{heading}</CardTitle>
       </CardHeader>
       <CardContent>
         <Textarea
