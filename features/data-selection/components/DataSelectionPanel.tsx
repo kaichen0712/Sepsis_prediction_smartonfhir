@@ -1,4 +1,4 @@
-// features/data-selection/components/DataSelectionPanel.tsx
+﻿// features/data-selection/components/DataSelectionPanel.tsx
 "use client"
 
 import { Card } from "@/components/ui/card"
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Info } from "lucide-react"
+import { useLanguage } from "@/lib/providers/LanguageProvider"
 import {
   Tooltip,
   TooltipContent,
@@ -47,55 +48,57 @@ interface DataSelectionPanelProps {
   onFiltersChange: (filters: DataFilters) => void
 }
 
-export function DataSelectionPanel({ 
-  clinicalData, 
+export function DataSelectionPanel({
+  clinicalData,
   selectedData,
   filters,
   onSelectionChange,
-  onFiltersChange 
+  onFiltersChange,
 }: DataSelectionPanelProps) {
+  const { t } = useLanguage()
+
   const dataCategories: DataItem[] = [
     {
-      id: 'conditions',
-      label: 'Medical Conditions',
-      description: 'Active and historical medical conditions',
+      id: "conditions",
+      label: t("dataSelection.conditions"),
+      description: t("dataSelection.conditionsDesc"),
       count: clinicalData.conditions?.length || 0,
-      category: 'clinical'
+      category: "clinical",
     },
     {
-      id: 'medications',
-      label: 'Medications',
-      description: 'Current and past medications',
+      id: "medications",
+      label: t("dataSelection.medications"),
+      description: t("dataSelection.medicationsDesc"),
       count: clinicalData.medications?.length || 0,
-      category: 'medication'
+      category: "medication",
     },
     {
-      id: 'allergies',
-      label: 'Allergies & Intolerances',
-      description: 'Known allergies and adverse reactions',
+      id: "allergies",
+      label: t("dataSelection.allergies"),
+      description: t("dataSelection.allergiesDesc"),
       count: clinicalData.allergies?.length || 0,
-      category: 'clinical'
+      category: "clinical",
     },
     {
-      id: 'diagnosticReports',
-      label: 'Diagnostic Reports',
-      description: 'Lab results and diagnostic imaging reports',
+      id: "diagnosticReports",
+      label: t("dataSelection.diagnosticReports"),
+      description: t("dataSelection.diagnosticReportsDesc"),
       count: clinicalData.diagnosticReports?.length || 0,
-      category: 'diagnostics'
+      category: "diagnostics",
     },
     {
-      id: 'observations',
-      label: 'Vital Signs',
-      description: 'Vital signs and other clinical measurements',
+      id: "observations",
+      label: t("dataSelection.observations"),
+      description: t("dataSelection.observationsDesc"),
       count: clinicalData.observations?.length || 0,
-      category: 'clinical'
-    }
+      category: "clinical",
+    },
   ]
 
   const handleToggle = (id: DataType, checked: boolean) => {
     onSelectionChange({
       ...selectedData,
-      [id]: checked
+      [id]: checked,
     } as DataSelection)
   }
 
@@ -110,7 +113,7 @@ export function DataSelectionPanel({
   const handleFilterChange = (key: keyof DataFilters, value: any) => {
     onFiltersChange({
       ...filters,
-      [key]: value
+      [key]: value,
     })
   }
 
@@ -120,17 +123,17 @@ export function DataSelectionPanel({
   const renderMedicationFilter = () => (
     <div className="mt-2 pl-6 space-y-2">
       <div className="flex items-center space-x-2 text-sm">
-        <span className="text-muted-foreground">Medication Status:</span>
+        <span className="text-muted-foreground">{t("dataSelection.medicationStatus")}</span>
         <Select
           value={filters.medicationStatus}
-          onValueChange={(value) => handleFilterChange('medicationStatus', value as 'active' | 'all')}
+          onValueChange={(value) => handleFilterChange("medicationStatus", value as "active" | "all")}
         >
           <SelectTrigger className="h-8 w-36">
-            <SelectValue placeholder="Select status" />
+            <SelectValue placeholder={t("dataSelection.selectStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">Active only</SelectItem>
-            <SelectItem value="all">All medications</SelectItem>
+            <SelectItem value="active">{t("dataSelection.activeOnly")}</SelectItem>
+            <SelectItem value="all">{t("dataSelection.allMedications")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -141,39 +144,41 @@ export function DataSelectionPanel({
     <div className="mt-2 pl-6 space-y-3">
       <div className="space-y-2">
         <div className="flex items-center space-x-2 text-sm">
-          <span className="text-muted-foreground">Report Version:</span>
+          <span className="text-muted-foreground">{t("dataSelection.reportVersion")}</span>
           <Select
-            value={filters.vitalSignsVersion || 'latest'}
-            onValueChange={(value) => handleFilterChange('vitalSignsVersion', value as 'latest' | 'all')}
+            value={filters.vitalSignsVersion || "latest"}
+            onValueChange={(value) => handleFilterChange("vitalSignsVersion", value as "latest" | "all")}
             defaultValue="latest"
           >
             <SelectTrigger className="h-8 w-40">
-              <SelectValue placeholder="Select version" />
+              <SelectValue placeholder={t("dataSelection.selectVersion")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="latest">Latest only</SelectItem>
-              <SelectItem value="all">All versions</SelectItem>
+              <SelectItem value="latest">{t("dataSelection.latestOnly")}</SelectItem>
+              <SelectItem value="all">{t("dataSelection.allVersions")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="flex items-center space-x-2 text-sm">
-          <span className="text-muted-foreground">Time Range:</span>
+          <span className="text-muted-foreground">{t("dataSelection.timeRange")}</span>
           <Select
-            value={filters.vitalSignsTimeRange || '1m'}
-            onValueChange={(value) => handleFilterChange('vitalSignsTimeRange', value as '24h' | '3d' | '1w' | '1m' | '3m' | 'all')}
+            value={filters.vitalSignsTimeRange || "1m"}
+            onValueChange={(value) =>
+              handleFilterChange("vitalSignsTimeRange", value as "24h" | "3d" | "1w" | "1m" | "3m" | "all")
+            }
             defaultValue="1m"
           >
             <SelectTrigger className="h-8 w-36">
-              <SelectValue placeholder="Select time range" />
+              <SelectValue placeholder={t("dataSelection.selectTimeRange")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="24h">Last 24 hours</SelectItem>
-              <SelectItem value="3d">Last 3 days</SelectItem>
-              <SelectItem value="1w">Last week</SelectItem>
-              <SelectItem value="1m">Last month</SelectItem>
-              <SelectItem value="3m">Last 3 months</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
+              <SelectItem value="24h">{t("dataSelection.last24Hours")}</SelectItem>
+              <SelectItem value="3d">{t("dataSelection.last3Days")}</SelectItem>
+              <SelectItem value="1w">{t("dataSelection.lastWeek")}</SelectItem>
+              <SelectItem value="1m">{t("dataSelection.lastMonth")}</SelectItem>
+              <SelectItem value="3m">{t("dataSelection.last3Months")}</SelectItem>
+              <SelectItem value="all">{t("dataSelection.allTime")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -185,43 +190,45 @@ export function DataSelectionPanel({
     <div className="mt-2 pl-6 space-y-3">
       <div className="space-y-2">
         <div className="flex items-center space-x-2 text-sm">
-          <span className="text-muted-foreground">Report Version:</span>
+          <span className="text-muted-foreground">{t("dataSelection.reportVersion")}</span>
           <Select
             value={filters.labReportVersion}
-            onValueChange={(value) => handleFilterChange('labReportVersion', value as 'latest' | 'all')}
+            onValueChange={(value) => handleFilterChange("labReportVersion", value as "latest" | "all")}
             defaultValue="latest"
           >
             <SelectTrigger className="h-8 w-40">
               <SelectValue>
-                {filters.labReportVersion === 'latest' ? 'Latest report only' : 'All reports'}
+                {filters.labReportVersion === "latest"
+                  ? t("dataSelection.latestReportOnly")
+                  : t("dataSelection.allReports")}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="latest">Latest report only</SelectItem>
-              <SelectItem value="all">All reports</SelectItem>
+              <SelectItem value="latest">{t("dataSelection.latestReportOnly")}</SelectItem>
+              <SelectItem value="all">{t("dataSelection.allReports")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <div className="flex items-center space-x-2 text-sm">
-          <span className="text-muted-foreground">Time Range:</span>
+          <span className="text-muted-foreground">{t("dataSelection.timeRange")}</span>
           <Select
-            value={filters.reportTimeRange || '1m'}
-            onValueChange={(value) => handleFilterChange('reportTimeRange', value as '1w' | '1m' | '3m' | '6m' | '1y' | 'all')}
+            value={filters.reportTimeRange || "1m"}
+            onValueChange={(value) => handleFilterChange("reportTimeRange", value as "1w" | "1m" | "3m" | "6m" | "1y" | "all")}
             defaultValue="1m"
           >
             <SelectTrigger className="h-8 w-36">
-              <SelectValue placeholder="Select time range" />
+              <SelectValue placeholder={t("dataSelection.selectTimeRange")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1w">Last week</SelectItem>
-              <SelectItem value="1m">Last month</SelectItem>
-              <SelectItem value="3m">Last 3 months</SelectItem>
-              <SelectItem value="6m">Last 6 months</SelectItem>
-              <SelectItem value="1y">Last year</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
+              <SelectItem value="1w">{t("dataSelection.lastWeek")}</SelectItem>
+              <SelectItem value="1m">{t("dataSelection.lastMonth")}</SelectItem>
+              <SelectItem value="3m">{t("dataSelection.last3Months")}</SelectItem>
+              <SelectItem value="6m">{t("dataSelection.last6Months")}</SelectItem>
+              <SelectItem value="1y">{t("dataSelection.lastYear")}</SelectItem>
+              <SelectItem value="all">{t("dataSelection.allTime")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -233,18 +240,14 @@ export function DataSelectionPanel({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-lg font-medium">Data Categories</h2>
+          <h2 className="text-lg font-medium">{t("dataSelection.dataCategories")}</h2>
           <p className="text-sm text-muted-foreground">
-            Select which data categories to include in your notes
+            {t("dataSelection.dataCategoriesDescription")}
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleToggleAll(!allSelected)}
-          >
-            {allSelected ? 'Deselect All' : someSelected ? 'Select All' : 'Select All'}
+          <Button variant="outline" size="sm" onClick={() => handleToggleAll(!allSelected)}>
+            {allSelected ? t("dataSelection.deselectAll") : t("dataSelection.selectAll")}
           </Button>
         </div>
       </div>
@@ -262,17 +265,14 @@ export function DataSelectionPanel({
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Label 
-                      htmlFor={`data-${id}`} 
-                      className="font-medium text-sm flex items-center"
-                    >
+                    <Label htmlFor={`data-${id}`} className="font-medium text-sm flex items-center">
                       {label}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-4 w-4 ml-1">
                               <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="sr-only">Info</span>
+                              <span className="sr-only">{t("common.info")}</span>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
@@ -282,21 +282,18 @@ export function DataSelectionPanel({
                       </TooltipProvider>
                     </Label>
                   </div>
-                  <Badge 
+                  <Badge
                     variant={selectedData[id] ? "default" : "secondary"}
                     className="ml-2"
                   >
-                    {count} {count === 1 ? 'item' : 'items'}
+                    {count} {count == 1 ? t("dataSelection.item") : t("dataSelection.items")}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {description}
-                </p>
-                
-                {/* Medication specific filters */}
-                {id === 'medications' && selectedData.medications && renderMedicationFilter()}
-                {id === 'observations' && selectedData.observations && renderVitalSignsFilters()}
-                {id === 'diagnosticReports' && selectedData.diagnosticReports && renderLabReportFilters()}
+                <p className="text-sm text-muted-foreground mt-1">{description}</p>
+
+                {id === "medications" && selectedData.medications && renderMedicationFilter()}
+                {id === "observations" && selectedData.observations && renderVitalSignsFilters()}
+                {id === "diagnosticReports" && selectedData.diagnosticReports && renderLabReportFilters()}
               </div>
             </div>
           </Card>

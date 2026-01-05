@@ -9,6 +9,7 @@ import SepsisRiskFeature from "@/features/sepsis-risk/Feature"
 import { DataSelectionPanel } from "@/features/data-selection/components/DataSelectionPanel"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
 import { useDataSelection, DataSelection } from "@/features/data-selection/hooks/useDataSelection"
+import { useLanguage } from "@/lib/providers/LanguageProvider"
 
 // Define the expected shape of the clinical data
 type ClinicalData = {
@@ -23,6 +24,7 @@ type ClinicalData = {
 
 export function RightPanelFeature() {
   const [activeTab, setActiveTab] = useState("medicalNote")
+  const { t } = useLanguage()
   const clinicalData = useClinicalData()
   const { 
     selectedData, 
@@ -43,9 +45,9 @@ export function RightPanelFeature() {
       defaultValue="medicalNote"
     >
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="medicalNote">Medical Note</TabsTrigger>
-        <TabsTrigger value="sepsisRisk">Sepsis Risk</TabsTrigger>
-        <TabsTrigger value="dataSelection">Data Selection</TabsTrigger>
+        <TabsTrigger value="sepsisRisk">{t("tabs.sepsisRisk")}</TabsTrigger>
+        <TabsTrigger value="medicalNote">{t("tabs.medicalNote")}</TabsTrigger>
+        <TabsTrigger value="dataSelection">{t("tabs.dataSelection")}</TabsTrigger>
       </TabsList>
       
       <TabsContent value="medicalNote" className="flex-1 mt-0 pt-4">

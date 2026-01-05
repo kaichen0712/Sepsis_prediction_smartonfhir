@@ -1,11 +1,11 @@
-// features/clinical-summary/components/DiagnosesCard.tsx
+﻿// features/clinical-summary/components/DiagnosesCard.tsx
 "use client"
 
 import { useMemo } from "react"
+import { useLanguage } from "@/lib/providers/LanguageProvider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
 
-// FHIR R4 Type Definitions
 interface Coding {
   system?: string
   code?: string
@@ -42,24 +42,23 @@ interface Row {
   categories: string[]
 }
 
-function ccText(cc?: CodeableConcept): string {
-  if (!cc) return "—"
-  return cc.text || cc.coding?.[0]?.display || cc.coding?.[0]?.code || "—"
-}
-
 function fmtDate(d?: string): string {
   if (!d) return ""
-  try { return new Date(d).toLocaleDateString() } catch { return d }
+  try {
+    return new Date(d).toLocaleDateString()
+  } catch {
+    return d
+  }
 }
 
 export function DiagnosesCard() {
+  const { t } = useLanguage()
   const { diagnoses = [], isLoading, error } = useClinicalData()
-  
+
   const rows = useMemo<Row[]>(() => {
     if (!diagnoses || !Array.isArray(diagnoses)) return []
-    
+
     return (diagnoses as Condition[]).map(condition => {
-      // Extract categories safely
       const categories: string[] = []
       if (condition.category) {
         condition.category.forEach((cat: Category) => {
@@ -74,22 +73,34 @@ export function DiagnosesCard() {
 
       return {
         id: condition.id || Math.random().toString(36),
-        title: condition.code?.text || condition.code?.coding?.[0]?.display || 'Unknown',
+        title:
+          condition.code?.text ||
+          condition.code?.coding?.[0]?.display ||
+          t("common.unknown"),
         when: fmtDate(condition.onsetDateTime || condition.recordedDate),
-        clinical: condition.clinicalStatus?.coding?.[0]?.display || condition.clinicalStatus?.coding?.[0]?.code || '',
-        verification: condition.verificationStatus?.coding?.[0]?.display || condition.verificationStatus?.coding?.[0]?.code || '',
-        categories: categories,
+        clinical:
+          condition.clinicalStatus?.coding?.[0]?.display ||
+          condition.clinicalStatus?.coding?.[0]?.code ||
+          "",
+        verification:
+          condition.verificationStatus?.coding?.[0]?.display ||
+          condition.verificationStatus?.coding?.[0]?.code ||
+          "",
+        categories,
       }
     })
-  }, [diagnoses])
+  }, [diagnoses, t])
 
-  const loading = isLoading
   const err = error ? String(error) : null
 
   const body = useMemo(() => {
-    if (loading) return <div className="text-sm text-muted-foreground">Loading diagnoses…</div>
+    if (isLoading) {
+      return <div className="text-sm text-muted-foreground">{t("diagnoses.loading")}</div>
+    }
     if (err) return <div className="text-sm text-red-600">{err}</div>
-    if (rows.length === 0) return <div className="text-sm text-muted-foreground">No active diagnoses.</div>
+    if (rows.length === 0) {
+      return <div className="text-sm text-muted-foreground">{t("diagnoses.noneActive")}</div>
+    }
 
     return (
       <ul className="space-y-2">
@@ -112,7 +123,10 @@ export function DiagnosesCard() {
                 </span>
               )}
               {r.categories?.map((c, i) => (
-                <span key={i} className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-gray-700 ring-1 ring-gray-200">
+                <span
+                  key={i}
+                  className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-gray-700 ring-1 ring-gray-200"
+                >
                   {c}
                 </span>
               ))}
@@ -121,11 +135,13 @@ export function DiagnosesCard() {
         ))}
       </ul>
     )
-  }, [rows, loading, err])
+  }, [rows, isLoading, err, t])
 
   return (
     <Card>
-      <CardHeader><CardTitle>Diagnosis / Problem List</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>{t("diagnoses.title")}</CardTitle>
+      </CardHeader>
       <CardContent>{body}</CardContent>
     </Card>
   )

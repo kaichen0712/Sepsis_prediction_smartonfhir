@@ -3,6 +3,7 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useLanguage } from "@/lib/providers/LanguageProvider"
 
 import { PatientInfoCard } from "./components/PatientInfoCard"
 import { VitalsCard } from "./components/VitalsCard"
@@ -12,15 +13,16 @@ import { ReportsCard } from "./components/ReportsCard"
 import { DiagnosesCard } from "./components/DiagnosisCard" 
 
 export default function ClinicalSummaryFeature() {
+  const { t } = useLanguage()
   // 固定高度，讓每個分頁內容自行捲動，不影響整頁
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col">
       <Tabs defaultValue="patient" className="flex h-full flex-col">
         {/* 分頁標籤列 */}
         <TabsList className="w-full justify-start">
-          <TabsTrigger value="patient">Patient / Vitals / Diagnosis</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="meds">Medications</TabsTrigger>
+          <TabsTrigger value="patient">{t("clinicalSummary.tabs.patientVitalsDiagnosis")}</TabsTrigger>
+          <TabsTrigger value="reports">{t("clinicalSummary.tabs.reports")}</TabsTrigger>
+          <TabsTrigger value="meds">{t("clinicalSummary.tabs.medications")}</TabsTrigger>
         </TabsList>
 
         {/* 分頁內容：各自 ScrollArea */}

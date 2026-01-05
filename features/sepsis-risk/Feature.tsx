@@ -4,6 +4,7 @@
 import { useMemo, useState } from "react"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
 import { usePatient } from "@/lib/providers/PatientProvider"
+import { useLanguage } from "@/lib/providers/LanguageProvider"
 
 import type { FHIRObservation } from "@/lib/providers/ClinicalDataProvider"
 
@@ -138,15 +139,8 @@ function extractLatestVitals(list: FHIRObservation[]): Vitals {
   return latestVitals
 }
 
-function readVitalsFromDom(): Partial<Record<keyof Vitals, number>> {
+function readVitalsFromDom(labelToKey: Record<string, keyof Vitals | "BP">): Partial<Record<keyof Vitals, number>> {
   if (typeof document === "undefined") return {}
-  const labelToKey: Record<string, keyof Vitals | "BP"> = {
-    HR: "HR",
-    RR: "RR",
-    Temp: "Temp",
-    "SpO₂": "SpO2",
-    BP: "BP",
-  }
 
   const result: Partial<Record<keyof Vitals, number>> = {}
   const labels = Object.keys(labelToKey)
@@ -178,8 +172,11 @@ function readVitalsFromDom(): Partial<Record<keyof Vitals, number>> {
   return result
 }
 
-function fillVitalsFromDisplay(vitals: Vitals): Vitals {
-  const display = readVitalsFromDom()
+function fillVitalsFromDisplay(
+  vitals: Vitals,
+  labelToKey: Record<string, keyof Vitals | "BP">
+): Vitals {
+  const display = readVitalsFromDom(labelToKey)
   return {
     HR: { ...vitals.HR, val: vitals.HR.val ?? display.HR ?? null },
     RR: { ...vitals.RR, val: vitals.RR.val ?? display.RR ?? null },
@@ -236,12 +233,12 @@ async function fetchPrediction(payload: ModelPayloadItem[]) {
   return { prediction, raw: data } as { prediction: number | null; raw?: unknown }
 }
 
-function formatValue(value: number | null) {
-  return value === null || value === undefined ? "N/A" : String(value)
+function formatValue(value: number | null, naLabel: string) {
+  return value === null || value === undefined ? naLabel : String(value)
 }
 
-function formatTemp(value: number | null): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return "N/A"
+function formatTemp(value: number | null, naLabel: string): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return naLabel
   return value.toFixed(1)
 }
 
@@ -250,17 +247,17 @@ function roundNullable(value: number | null): number | null {
   return Math.round(value)
 }
 
-function formatGender(gender?: string | null): string {
-  if (!gender) return "N/A"
+function formatGender(gender?: string | null): string | null {
+  if (!gender) return null
   return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()
 }
 
-function formatName(patient: any): string {
-  if (!patient?.name?.[0]) return "N/A"
+function formatName(patient: any): string | null {
+  if (!patient?.name?.[0]) return null
   const name = patient.name[0]
   const givenName = name.given?.join(" ").trim()
   const familyName = name.family?.trim() || ""
-  return [givenName, familyName].filter(Boolean).join(" ") || "N/A"
+  return [givenName, familyName].filter(Boolean).join(" ") || null
 }
 
 function pickVitalsSource(
@@ -312,6 +309,7 @@ function logVitalCategories(list: FHIRObservation[]) {
 }
 
 export default function SepsisRiskFeature() {
+  const { t } = useLanguage()
   const { patient, loading: patientLoading, error: patientError } = usePatient()
   const {
     vitals,
@@ -326,6 +324,19 @@ export default function SepsisRiskFeature() {
   const [error, setError] = useState<string | null>(null)
   const [predictionError, setPredictionError] = useState<string | null>(null)
   const [hasFetched, setHasFetched] = useState(false)
+  const naLabel = t("common.na")
+  const labelToKey = {
+    HR: "HR",
+    [t("vitals.hr")]: "HR",
+    RR: "RR",
+    [t("vitals.rr")]: "RR",
+    Temp: "Temp",
+    [t("vitals.temp")]: "Temp",
+    "SpO₂": "SpO2",
+    [t("vitals.spo2")]: "SpO2",
+    BP: "BP",
+    [t("vitals.bp")]: "BP",
+  } as Record<string, keyof Vitals | "BP">
 
   const patientInfo = useMemo(() => {
     if (!patient) return null
@@ -348,12 +359,12 @@ export default function SepsisRiskFeature() {
     try {
       const patientId = patientInfo?.id?.trim()
       if (!patientId) {
-        throw new Error("Patient is not available yet")
+        throw new Error(t("sepsisRisk.errors.patientUnavailable"))
       }
 
       const vitalsSource = pickVitalsSource(vitals, vitalSigns, observations)
       const latestVitals = extractLatestVitals(vitalsSource.list || [])
-      const filledVitals = fillVitalsFromDisplay(latestVitals)
+      const filledVitals = fillVitalsFromDisplay(latestVitals, labelToKey)
       const latestTime = Object.values(latestVitals)
         .map(v => timeToMs(v.time))
         .reduce((a, b) => Math.max(a, b), 0)
@@ -382,10 +393,10 @@ export default function SepsisRiskFeature() {
         setPrediction(modelResult.prediction ?? null)
       } catch (err) {
         setPrediction(null)
-        setPredictionError(err instanceof Error ? err.message : "Prediction failed")
+        setPredictionError(err instanceof Error ? err.message : t("sepsisRisk.errors.predictionFailed"))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error")
+      setError(err instanceof Error ? err.message : t("sepsisRisk.errors.unknownError"))
       setData(null)
       setPrediction(null)
     } finally {
@@ -395,8 +406,19 @@ export default function SepsisRiskFeature() {
 
   const age = data ? computeAge(data.patient.birthDate, data.targetDate) : null
   const vitalsSource = pickVitalsSource(vitals, vitalSigns, observations)
+  const vitalsSourceLabel =
+    {
+      vitals: t("sepsisRisk.source.vitals"),
+      vitalSigns: t("sepsisRisk.source.vitalSigns"),
+      observations: t("sepsisRisk.source.observations"),
+      none: t("sepsisRisk.source.none"),
+    }[vitalsSource.label] ?? vitalsSource.label
   const predictionLabel =
-    prediction === 1 ? "High Risk" : prediction === 0 ? "Normal" : "N/A"
+    prediction === 1
+      ? t("sepsisRisk.prediction.highRisk")
+      : prediction === 0
+      ? t("sepsisRisk.prediction.normal")
+      : naLabel
   const predictionTone =
     prediction === 1
       ? "border-red-200 bg-red-50 text-red-800"
@@ -407,23 +429,20 @@ export default function SepsisRiskFeature() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border p-4">
-        <div className="text-sm font-semibold">About Sepsis Prediction</div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          敗血症可能導致器官功能衰竭與危及生命。本頁籤會透過病患的生理監測資訊，
-          預測是否有敗血症風險。此模型的特點是不需檢驗數值，僅使用生理監測數值進行預測。
-        </p>
+        <div className="text-sm font-semibold">{t("sepsisRisk.aboutTitle")}</div>
+        <p className="mt-2 text-sm text-muted-foreground">{t("sepsisRisk.aboutDescription")}</p>
         <button
           className="mt-4 h-9 w-full rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-60"
           onClick={handleFetch}
           disabled={loading || patientLoading || vitalsLoading}
         >
-          {loading ? "Loading..." : "Run Prediction"}
+          {loading ? t("common.loading") : t("sepsisRisk.runPrediction")}
         </button>
       </div>
 
       {hasFetched && (
       <div className="rounded-lg border p-4">
-        <div className="text-sm font-semibold">Sepsis Risk Prediction</div>
+        <div className="text-sm font-semibold">{t("sepsisRisk.predictionTitle")}</div>
 
         {(error || patientError || vitalsError) && (
           <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -432,7 +451,7 @@ export default function SepsisRiskFeature() {
         )}
 
         <div className="mt-4 rounded-md border p-4">
-          <div className="text-sm font-semibold">Prediction Result</div>
+          <div className="text-sm font-semibold">{t("sepsisRisk.predictionResult")}</div>
           {predictionError ? (
             <div className="mt-3 text-sm text-red-700">{predictionError}</div>
           ) : (
@@ -443,32 +462,32 @@ export default function SepsisRiskFeature() {
         </div>
         <div className="mt-4 space-y-4">
         <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold">Patient (Model Inputs)</div>
+          <div className="text-xs font-semibold">{t("sepsisRisk.patientInputs")}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Patient data sent to the model for prediction.
+            {t("sepsisRisk.patientInputsDescription")}
           </div>
           <div className="mt-2 text-sm">
-            <div>Patient ID : {data?.patientId ?? patientInfo?.id ?? "N/A"}</div>
-            <div>Gender : {data?.patient.gender ?? patientInfo?.genderLabel ?? "N/A"}</div>
-            <div>Age : {patientInfo?.age ?? age ?? "N/A"}</div>
+            <div>{t("sepsisRisk.patientIdLabel")} {data?.patientId ?? patientInfo?.id ?? naLabel}</div>
+            <div>{t("sepsisRisk.genderLabel")} {data?.patient.gender ?? patientInfo?.genderLabel ?? naLabel}</div>
+            <div>{t("sepsisRisk.ageLabel")} {patientInfo?.age ?? age ?? naLabel}</div>
           </div>
         </div>
 
         <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold">Latest Vitals (Model Inputs)</div>
+          <div className="text-xs font-semibold">{t("sepsisRisk.latestVitals")}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Physiologic measurements sent to the model.
+            {t("sepsisRisk.latestVitalsDescription")}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Source: {vitalsSource.label} ({vitalsSource.list.length})
+            {t("sepsisRisk.sourceLabel")} {vitalsSourceLabel} ({vitalsSource.list.length})
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-            <div>HR : {formatValue(data?.vitals.HR.val ?? null)}</div>
-            <div>RR : {formatValue(data?.vitals.RR.val ?? null)}</div>
-            <div>Temp : {formatTemp(data?.vitals.Temp.val ?? null)}</div>
-            <div>SpO₂ : {formatValue(data?.vitals.SpO2.val ?? null)}</div>
-            <div>SBP : {formatValue(roundNullable(data?.vitals.SBP.val ?? null))}</div>
-            <div>DBP : {formatValue(roundNullable(data?.vitals.DBP.val ?? null))}</div>
+            <div>{t("sepsisRisk.vitalLabels.hr")} {formatValue(data?.vitals.HR.val ?? null, naLabel)}</div>
+            <div>{t("sepsisRisk.vitalLabels.rr")} {formatValue(data?.vitals.RR.val ?? null, naLabel)}</div>
+            <div>{t("sepsisRisk.vitalLabels.temp")} {formatTemp(data?.vitals.Temp.val ?? null, naLabel)}</div>
+            <div>{t("sepsisRisk.vitalLabels.spo2")} {formatValue(data?.vitals.SpO2.val ?? null, naLabel)}</div>
+            <div>{t("sepsisRisk.vitalLabels.sbp")} {formatValue(roundNullable(data?.vitals.SBP.val ?? null), naLabel)}</div>
+            <div>{t("sepsisRisk.vitalLabels.dbp")} {formatValue(roundNullable(data?.vitals.DBP.val ?? null), naLabel)}</div>
           </div>
         </div>
         </div>

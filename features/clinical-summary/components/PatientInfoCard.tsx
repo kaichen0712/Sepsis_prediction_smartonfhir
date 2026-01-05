@@ -2,11 +2,12 @@
 "use client"
 
 import { useMemo } from "react"
+import { useLanguage } from "@/lib/providers/LanguageProvider"
 import { usePatient } from "@/lib/providers/PatientProvider"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
-function calculateAge(birthDate?: string): string {
-  if (!birthDate) return "N/A"
+function calculateAge(birthDate: string | undefined, naLabel: string): string {
+  if (!birthDate) return naLabel
   try {
     const birth = new Date(birthDate)
     const today = new Date()
@@ -18,42 +19,54 @@ function calculateAge(birthDate?: string): string {
     return age.toString()
   } catch (error) {
     console.error("Error calculating age:", error)
-    return "N/A"
+    return naLabel
   }
 }
 
-function formatGender(gender?: string): string {
-  if (!gender) return "N/A"
+function formatGender(gender: string | undefined, naLabel: string): string {
+  if (!gender) return naLabel
   return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()
 }
 
-function formatName(patient: any): string {
-  if (!patient?.name?.[0]) return "N/A"
+function formatName(patient: any, naLabel: string): string {
+  if (!patient?.name?.[0]) return naLabel
   const name = patient.name[0]
   const givenName = name.given?.join(" ").trim()
   const familyName = name.family?.trim() || ""
-  return [givenName, familyName].filter(Boolean).join(" ") || "N/A"
+  return [givenName, familyName].filter(Boolean).join(" ") || naLabel
 }
 
 export function PatientInfoCard() {
+  const { t } = useLanguage()
+  const naLabel = t("common.na")
   const { patient, loading, error } = usePatient()
+
+  const normalizeErrorMessage = (message: string) => {
+    if (message.includes("No 'state' parameter found")) {
+      return t("patientInfo.stateMissing")
+    }
+    if (message.includes("Failed to load patient")) {
+      return t("patientInfo.failedToLoad")
+    }
+    return message
+  }
 
   const patientInfo = useMemo(() => {
     if (!patient) return null
     
     return {
-      name: formatName(patient),
-      gender: formatGender(patient.gender),
-      age: calculateAge(patient.birthDate),
+      name: formatName(patient, naLabel),
+      gender: formatGender(patient.gender, naLabel),
+      age: calculateAge(patient.birthDate, naLabel),
       id: patient.id
     }
-  }, [patient])
+  }, [patient, naLabel])
 
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Patient Info</CardTitle>
+          <CardTitle>{t("patientInfo.title")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="h-5 w-3/4 animate-pulse bg-muted rounded" />
@@ -65,16 +78,16 @@ export function PatientInfoCard() {
   }
 
   if (error || !patientInfo) {
-    let errorMessage = "Failed to load patient information"
+    let errorMessage = t("patientInfo.failedToLoad")
     
     if (error) {
       if (typeof error === 'string') {
-        errorMessage = error
+        errorMessage = normalizeErrorMessage(error)
       } else if (error && typeof error === 'object') {
         // Handle object with message property
         const err = error as { message?: unknown }
         if (typeof err.message === 'string') {
-          errorMessage = err.message
+          errorMessage = normalizeErrorMessage(err.message)
         } else {
           errorMessage = JSON.stringify(error)
         }
@@ -86,7 +99,7 @@ export function PatientInfoCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Patient Info</CardTitle>
+          <CardTitle>{t("patientInfo.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-destructive">
@@ -100,22 +113,22 @@ export function PatientInfoCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Patient Info</CardTitle>
+        <CardTitle>{t("patientInfo.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="grid grid-cols-3 gap-2">
-          <span className="font-medium text-muted-foreground">Name:</span>
+          <span className="font-medium text-muted-foreground">{t("patientInfo.name")}</span>
           <span className="col-span-2">{patientInfo.name}</span>
           
-          <span className="font-medium text-muted-foreground">Gender:</span>
+          <span className="font-medium text-muted-foreground">{t("patientInfo.gender")}</span>
           <span className="col-span-2">{patientInfo.gender}</span>
           
-          <span className="font-medium text-muted-foreground">Age:</span>
+          <span className="font-medium text-muted-foreground">{t("patientInfo.age")}</span>
           <span className="col-span-2">{patientInfo.age}</span>
           
           {patientInfo.id && (
             <>
-              <span className="font-medium text-muted-foreground">ID:</span>
+              <span className="font-medium text-muted-foreground">{t("patientInfo.id")}</span>
               <span className="col-span-2 text-sm text-muted-foreground">
                 {patientInfo.id}
               </span>

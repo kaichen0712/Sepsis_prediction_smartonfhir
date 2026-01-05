@@ -1,0 +1,79 @@
+app\smart\callback\page.tsx:19: Completing SMART login…
+app\smart\launch\page.tsx:14: .github.io/
+app\smart\launch\page.tsx:45: Launching SMART…
+features\clinical-summary\Feature.tsx:21: Patient / Vitals / Diagnosis
+features\clinical-summary\Feature.tsx:22: Reports
+features\clinical-summary\Feature.tsx:23: Medications
+features\clinical-summary\components\AllergiesCard.tsx:78: Loading allergies…
+features\clinical-summary\components\AllergiesCard.tsx:90: No active allergies found.
+features\clinical-summary\components\AllergiesCard.tsx:158: Allergies & Intolerances
+features\clinical-summary\components\DiagnosisCard.tsx:90: Loading diagnoses…
+features\clinical-summary\components\DiagnosisCard.tsx:92: No active diagnoses.
+features\clinical-summary\components\DiagnosisCard.tsx:128: Diagnosis / Problem List
+features\clinical-summary\components\MedListCard.tsx:235: Loading medications…
+features\clinical-summary\components\MedListCard.tsx:237: No medications found.
+features\clinical-summary\components\MedListCard.tsx:274: Medications
+features\clinical-summary\components\PatientInfoCard.tsx:56: Patient Info
+features\clinical-summary\components\PatientInfoCard.tsx:89: Patient Info
+features\clinical-summary\components\PatientInfoCard.tsx:103: Patient Info
+features\clinical-summary\components\PatientInfoCard.tsx:107: Name:
+features\clinical-summary\components\PatientInfoCard.tsx:110: Gender:
+features\clinical-summary\components\PatientInfoCard.tsx:113: Age:
+features\clinical-summary\components\PatientInfoCard.tsx:118: ID:
+features\clinical-summary\components\ReportsCard.tsx:91: Abnormal
+features\clinical-summary\components\ReportsCard.tsx:92: Positive
+features\clinical-summary\components\ReportsCard.tsx:93: Negative
+features\clinical-summary\components\ReportsCard.tsx:94: Normal
+features\clinical-summary\components\ReportsCard.tsx:245: Reports
+features\clinical-summary\components\ReportsCard.tsx:258: Reports
+features\clinical-summary\components\ReportsCard.tsx:271: Reports
+features\clinical-summary\components\ReportsCard.tsx:285: Reports
+features\clinical-summary\components\VitalsCard.tsx:179: Loading vitals…
+features\clinical-summary\components\VitalsCard.tsx:201: Vitals
+features\data-selection\Feature.tsx:33: Loading clinical data...
+features\data-selection\Feature.tsx:43: No clinical data available
+features\data-selection\Feature.tsx:66: Data Selection
+features\data-selection\components\DataSelectionPanel.tsx:123: Medication Status:
+features\data-selection\components\DataSelectionPanel.tsx:129: Select status
+features\data-selection\components\DataSelectionPanel.tsx:132: Active only
+features\data-selection\components\DataSelectionPanel.tsx:133: All medications
+features\data-selection\components\DataSelectionPanel.tsx:144: Report Version:
+features\data-selection\components\DataSelectionPanel.tsx:151: Select version
+features\data-selection\components\DataSelectionPanel.tsx:154: Latest only
+features\data-selection\components\DataSelectionPanel.tsx:155: All versions
+features\data-selection\components\DataSelectionPanel.tsx:161: Time Range:
+features\data-selection\components\DataSelectionPanel.tsx:168: Select time range
+features\data-selection\components\DataSelectionPanel.tsx:171: Last 24 hours
+features\data-selection\components\DataSelectionPanel.tsx:172: Last 3 days
+features\data-selection\components\DataSelectionPanel.tsx:173: Last week
+features\data-selection\components\DataSelectionPanel.tsx:174: Last month
+features\data-selection\components\DataSelectionPanel.tsx:175: Last 3 months
+features\data-selection\components\DataSelectionPanel.tsx:176: All time
+features\data-selection\components\DataSelectionPanel.tsx:188: Report Version:
+features\data-selection\components\DataSelectionPanel.tsx:200: Latest report only
+features\data-selection\components\DataSelectionPanel.tsx:201: All reports
+features\data-selection\components\DataSelectionPanel.tsx:209: Time Range:
+features\data-selection\components\DataSelectionPanel.tsx:216: Select time range
+features\data-selection\components\DataSelectionPanel.tsx:219: Last week
+features\data-selection\components\DataSelectionPanel.tsx:220: Last month
+features\data-selection\components\DataSelectionPanel.tsx:221: Last 3 months
+features\data-selection\components\DataSelectionPanel.tsx:222: Last 6 months
+features\data-selection\components\DataSelectionPanel.tsx:223: Last year
+features\data-selection\components\DataSelectionPanel.tsx:224: All time
+features\data-selection\components\DataSelectionPanel.tsx:236: Data Categories
+features\data-selection\components\DataSelectionPanel.tsx:275: Info
+features\medical-note\components\ApiKeyField.tsx:25: sk-...
+features\medical-note\components\ApiKeyField.tsx:31: Save
+features\medical-note\components\ApiKeyField.tsx:32: Clear
+features\medical-note\components\AsrPanel.tsx:45: Audio Speech Recognition (ASR)
+features\medical-note\components\AsrPanel.tsx:54: Stop Recording
+features\medical-note\components\AsrPanel.tsx:62: Transcribing…
+features\medical-note\components\GptPanel.tsx:146: GPT Response
+features\medical-note\components\GptPanel.tsx:155: GPT response will appear here...
+features\medical-note\components\PromptEditor.tsx:7: Prompt
+features\sepsis-risk\Feature.tsx:410: About Sepsis Prediction
+features\sepsis-risk\Feature.tsx:426: Sepsis Risk Prediction
+features\sepsis-risk\Feature.tsx:435: Prediction Result
+features\sepsis-risk\Feature.tsx:446: Patient (Model Inputs)
+features\sepsis-risk\Feature.tsx:458: Latest Vitals (Model Inputs)
+lib\providers\ClinicalDataProvider.tsx:9: Promise
