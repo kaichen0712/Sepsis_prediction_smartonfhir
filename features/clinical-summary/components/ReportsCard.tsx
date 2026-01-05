@@ -73,7 +73,7 @@ function fmtDate(d?: string) {
   }
 }
 
-function refRangeText(rr?: ReferenceRange[], refPrefix: string) {
+function refRangeText(rr: ReferenceRange[] | undefined, refPrefix: string) {
   if (!rr || rr.length == 0) return ""
   const r = rr[0]
   if (r.text) return `${refPrefix} ${r.text}`
