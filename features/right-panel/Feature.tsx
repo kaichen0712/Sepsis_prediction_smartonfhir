@@ -24,6 +24,7 @@ type ClinicalData = {
 
 export function RightPanelFeature() {
   const [activeTab, setActiveTab] = useState("sepsisRisk")
+  const [scheduledSepsisRisk, setScheduledSepsisRisk] = useState(false)
   const { t } = useLanguage()
   const clinicalData = useClinicalData()
   const { 
@@ -78,10 +79,13 @@ export function RightPanelFeature() {
         </ScrollArea>
       </TabsContent>
 
-      <TabsContent value="sepsisRisk" className="flex-1 mt-0 pt-4">
+      <TabsContent value="sepsisRisk" className="flex-1 mt-0 pt-4" forceMount>
         <ScrollArea className="h-full pr-2">
           <div className="space-y-4">
-            <SepsisRiskFeature isActive={activeTab === "sepsisRisk"} />
+            <SepsisRiskFeature
+              scheduledEnabled={scheduledSepsisRisk}
+              onScheduledChange={setScheduledSepsisRisk}
+            />
           </div>
         </ScrollArea>
       </TabsContent>

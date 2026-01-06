@@ -172,21 +172,29 @@
   sepsisRisk: {
     aboutTitle: "About Sepsis Prediction",
     aboutDescription:
-      "Sepsis can lead to organ failure and be life-threatening. This page analyzes patient monitoring data to estimate sepsis risk without requiring lab values.",
+      "Sepsis can lead to organ failure and be life-threatening. This tab uses the patient's sex, age, and physiologic monitoring data to estimate sepsis risk through a prediction model. The model does not require lab values, helping clinicians quickly track risk trends and intervene early with appropriate treatment.",
+    scheduledPrediction: "Enable scheduled prediction (every 5 seconds)",
+    scheduledActive: "Scheduled · every 5 seconds",
+    scheduledRunning: "Running",
     runPrediction: "Run Prediction",
+    stopPrediction: "Stop Prediction",
+    lastPredictionAt: "Last prediction:",
     predictionTitle: "Sepsis Risk Prediction",
-    predictionResult: "Prediction Result",
+    predictionResult: "Model Prediction Result",
+    modelInputsTitle: "Model Inputs",
     prediction: {
       highRisk: "High Risk",
       normal: "Normal",
     },
     patientInputs: "Patient (Model Inputs)",
-    patientInputsDescription: "Patient data sent to the model for prediction.",
+    patientInputsDescription:
+      "Patient demographics and identifiers prepared as inputs for the prediction model.",
     patientIdLabel: "Patient ID:",
     genderLabel: "Gender:",
     ageLabel: "Age:",
     latestVitals: "Latest Vitals (Model Inputs)",
-    latestVitalsDescription: "Physiologic measurements sent to the model.",
+    latestVitalsDescription:
+      "Recent physiologic measurements prepared and sent to the model for risk prediction.",
     sourceLabel: "Source:",
     source: {
       vitals: "vitals",
@@ -195,12 +203,12 @@
       none: "none",
     },
     vitalLabels: {
-      hr: "HR:",
-      rr: "RR:",
-      temp: "Temp:",
-      spo2: "SpO₂:",
-      sbp: "SBP:",
-      dbp: "DBP:",
+      hr: "HR (bpm):",
+      rr: "RR (breaths/min):",
+      temp: "Temp (°C):",
+      spo2: "SpO₂ (%):",
+      sbp: "SBP (mmHg):",
+      dbp: "DBP (mmHg):",
     },
     errors: {
       patientUnavailable: "Patient is not available yet",

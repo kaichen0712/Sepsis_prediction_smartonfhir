@@ -1,10 +1,13 @@
 // features/sepsis-risk/Feature.tsx
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
 import { usePatient } from "@/lib/providers/PatientProvider"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 
 import type { FHIRObservation } from "@/lib/providers/ClinicalDataProvider"
 
@@ -214,7 +217,7 @@ function buildModelPayload(
   ]
 }
 
-async function fetchPrediction(payload: ModelPayloadItem[]) {
+async function fetchPrediction(payload: ModelPayloadItem[], signal?: AbortSignal) {
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   const res = await fetch(
     "https://sepsissmartonfhir-amhgcnfacgejhqhr.centralus-01.azurewebsites.net/api/sepsis",
@@ -222,6 +225,7 @@ async function fetchPrediction(payload: ModelPayloadItem[]) {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
+      signal,
     }
   )
 
@@ -250,6 +254,14 @@ function roundNullable(value: number | null): number | null {
 function formatGender(gender?: string | null): string | null {
   if (!gender) return null
   return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()
+}
+
+function formatTimeLabel(timeMs: number): string {
+  return new Date(timeMs).toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
 }
 
 function formatName(patient: any): string | null {
@@ -308,7 +320,13 @@ function logVitalCategories(list: FHIRObservation[]) {
   })
 }
 
-export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) {
+export default function SepsisRiskFeature({
+  scheduledEnabled,
+  onScheduledChange,
+}: {
+  scheduledEnabled: boolean
+  onScheduledChange: (next: boolean) => void
+}) {
   const { t } = useLanguage()
   const { patient, loading: patientLoading, error: patientError } = usePatient()
   const {
@@ -324,7 +342,15 @@ export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) 
   const [error, setError] = useState<string | null>(null)
   const [predictionError, setPredictionError] = useState<string | null>(null)
   const [hasFetched, setHasFetched] = useState(false)
+  const [lastRunAt, setLastRunAt] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const requestIdRef = useRef(0)
+  const lastRunAtRef = useRef(0)
+  const patientLoadingRef = useRef(false)
+  const vitalsLoadingRef = useRef(false)
+  const patientIdRef = useRef<string | null>(null)
   const naLabel = t("common.na")
+  const predictionIntervalMs = 5000
   const labelToKey = {
     HR: "HR",
     [t("vitals.hr")]: "HR",
@@ -351,7 +377,20 @@ export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) 
     }
   }, [patient])
 
+  useEffect(() => {
+    patientLoadingRef.current = patientLoading
+    vitalsLoadingRef.current = vitalsLoading
+    patientIdRef.current = patientInfo?.id?.trim() ?? null
+  }, [patientLoading, vitalsLoading, patientInfo?.id])
+
   const handleFetch = async () => {
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+    if (abortRef.current) {
+      abortRef.current.abort()
+    }
+    const controller = new AbortController()
+    abortRef.current = controller
     setLoading(true)
     setError(null)
     setPredictionError(null)
@@ -360,6 +399,8 @@ export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) 
       if (!patientId) {
         throw new Error(t("sepsisRisk.errors.patientUnavailable"))
       }
+      lastRunAtRef.current = Date.now()
+      setLastRunAt(formatTimeLabel(lastRunAtRef.current))
       setHasFetched(true)
 
       const vitalsSource = pickVitalsSource(vitals, vitalSigns, observations)
@@ -389,27 +430,38 @@ export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) 
       setData(result)
       try {
         const payload = buildModelPayload(patientId, targetDate, result)
-        const modelResult = await fetchPrediction(payload)
+        const modelResult = await fetchPrediction(payload, controller.signal)
+        if (requestId !== requestIdRef.current) return
         setPrediction(modelResult.prediction ?? null)
       } catch (err) {
+        if (requestId !== requestIdRef.current) return
+        if (err instanceof DOMException && err.name === "AbortError") return
         setPrediction(null)
         setPredictionError(err instanceof Error ? err.message : t("sepsisRisk.errors.predictionFailed"))
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return
+      if (err instanceof DOMException && err.name === "AbortError") return
       setError(err instanceof Error ? err.message : t("sepsisRisk.errors.unknownError"))
       setData(null)
       setPrediction(null)
     } finally {
+      if (requestId !== requestIdRef.current) return
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (!isActive) return
-    if (hasFetched || loading || patientLoading || vitalsLoading) return
-    if (!patientInfo?.id) return
-    void handleFetch()
-  }, [isActive, hasFetched, loading, patientLoading, vitalsLoading, patientInfo?.id])
+    if (!scheduledEnabled) return
+    const tick = () => {
+      if (patientLoadingRef.current || vitalsLoadingRef.current) return
+      if (!patientIdRef.current) return
+      void handleFetch()
+    }
+    tick()
+    const intervalId = setInterval(tick, predictionIntervalMs)
+    return () => clearInterval(intervalId)
+  }, [scheduledEnabled, predictionIntervalMs])
 
   const age = data ? computeAge(data.patient.birthDate, data.targetDate) : null
   const vitalsSource = pickVitalsSource(vitals, vitalSigns, observations)
@@ -433,13 +485,60 @@ export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) 
       ? "border-emerald-200 bg-emerald-50 text-emerald-800"
       : "border-muted text-muted-foreground"
 
+  const handleStop = () => {
+    onScheduledChange(false)
+    if (abortRef.current) {
+      abortRef.current.abort()
+    }
+    requestIdRef.current += 1
+    setLoading(false)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border p-4">
+      <div className="rounded-lg border bg-card p-4">
         <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
           {t("sepsisRisk.aboutTitle")}
         </div>
         <p className="mt-2 text-sm text-muted-foreground">{t("sepsisRisk.aboutDescription")}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="sepsis-scheduled-run"
+              checked={scheduledEnabled}
+              onCheckedChange={checked => onScheduledChange(checked === true)}
+            />
+            <Label htmlFor="sepsis-scheduled-run" className="text-sm">
+              {t("sepsisRisk.scheduledPrediction")}
+            </Label>
+          </div>
+          {scheduledEnabled && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+                <span className="inline-block size-2 animate-pulse rounded-full bg-emerald-500" />
+                {t("sepsisRisk.scheduledActive")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block size-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" />
+                {t("sepsisRisk.scheduledRunning")}
+              </span>
+            </div>
+          )}
+          <Button
+            onClick={handleFetch}
+            disabled={loading || patientLoading || vitalsLoading}
+          >
+            {t("sepsisRisk.runPrediction")}
+          </Button>
+          <Button variant="outline" onClick={handleStop} disabled={!loading && !scheduledEnabled}>
+            {t("sepsisRisk.stopPrediction")}
+          </Button>
+        </div>
+        {lastRunAt && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            {t("sepsisRisk.lastPredictionAt")} {lastRunAt}
+          </div>
+        )}
         {loading && (
           <div className="mt-4 text-sm text-muted-foreground">
             {t("common.loading")}
@@ -448,66 +547,73 @@ export default function SepsisRiskFeature({ isActive }: { isActive?: boolean }) 
       </div>
 
       {hasFetched && (
-      <div className="rounded-lg border p-4">
-        <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
-          {t("sepsisRisk.predictionTitle")}
-        </div>
-
-        {(error || patientError || vitalsError) && (
-          <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-            {error || patientError || vitalsError?.message}
-          </div>
-        )}
-
-        <div className="mt-4 rounded-md border p-4">
-          <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
-            {t("sepsisRisk.predictionResult")}
-          </div>
-          {predictionError ? (
-            <div className="mt-3 text-sm text-red-700">{predictionError}</div>
-          ) : (
-            <div className={`mt-3 rounded-md border px-4 py-3 text-base font-semibold ${predictionTone}`}>
-              {predictionLabel}
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-card p-4">
+            <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+              {t("sepsisRisk.predictionTitle")}
             </div>
-          )}
-        </div>
-        <div className="mt-4 space-y-4">
-        <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
-            {t("sepsisRisk.patientInputs")}
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {t("sepsisRisk.patientInputsDescription")}
-          </div>
-          <div className="mt-2 text-sm">
-            <div>{t("sepsisRisk.patientIdLabel")} {data?.patientId ?? patientInfo?.id ?? naLabel}</div>
-            <div>{t("sepsisRisk.genderLabel")} {data?.patient.gender ?? patientInfo?.genderLabel ?? naLabel}</div>
-            <div>{t("sepsisRisk.ageLabel")} {patientInfo?.age ?? age ?? naLabel}</div>
-          </div>
-        </div>
 
-        <div className="rounded-md border p-3">
-          <div className="text-xs font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
-            {t("sepsisRisk.latestVitals")}
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {t("sepsisRisk.latestVitalsDescription")}
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {t("sepsisRisk.sourceLabel")} {vitalsSourceLabel} ({vitalsSource.list.length})
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-            <div>{t("sepsisRisk.vitalLabels.hr")} {formatValue(data?.vitals.HR.val ?? null, naLabel)}</div>
-            <div>{t("sepsisRisk.vitalLabels.rr")} {formatValue(data?.vitals.RR.val ?? null, naLabel)}</div>
-            <div>{t("sepsisRisk.vitalLabels.temp")} {formatTemp(data?.vitals.Temp.val ?? null, naLabel)}</div>
-            <div>{t("sepsisRisk.vitalLabels.spo2")} {formatValue(data?.vitals.SpO2.val ?? null, naLabel)}</div>
-            <div>{t("sepsisRisk.vitalLabels.sbp")} {formatValue(roundNullable(data?.vitals.SBP.val ?? null), naLabel)}</div>
-            <div>{t("sepsisRisk.vitalLabels.dbp")} {formatValue(roundNullable(data?.vitals.DBP.val ?? null), naLabel)}</div>
-          </div>
-        </div>
-        </div>
+            {(error || patientError || vitalsError) && (
+              <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {error || patientError || vitalsError?.message}
+              </div>
+            )}
 
-      </div>
+            <div className="mt-4 rounded-md border bg-card p-4">
+              <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+                {t("sepsisRisk.predictionResult")}
+              </div>
+              {predictionError ? (
+                <div className="mt-3 text-sm text-red-700">{predictionError}</div>
+              ) : (
+                <div className={`mt-3 rounded-md border px-4 py-3 text-base font-semibold ${predictionTone}`}>
+                  {predictionLabel}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-card p-4">
+            <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+              {t("sepsisRisk.modelInputsTitle")}
+            </div>
+            <div className="mt-4 space-y-3 text-base">
+              <div className="space-y-2">
+                <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+                  {t("sepsisRisk.patientInputs")}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t("sepsisRisk.patientInputsDescription")}
+                </div>
+                <div>
+                  <div>{t("sepsisRisk.patientIdLabel")} {data?.patientId ?? patientInfo?.id ?? naLabel}</div>
+                  <div>{t("sepsisRisk.genderLabel")} {data?.patient.gender ?? patientInfo?.genderLabel ?? naLabel}</div>
+                  <div>{t("sepsisRisk.ageLabel")} {patientInfo?.age ?? age ?? naLabel}</div>
+                </div>
+              </div>
+              <div className="space-y-2 border-t pt-3">
+                <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+                  {t("sepsisRisk.latestVitals")}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t("sepsisRisk.latestVitalsDescription")}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {t("sepsisRisk.sourceLabel")} {vitalsSourceLabel} ({vitalsSource.list.length})
+                </div>
+                <div className="grid gap-2 whitespace-nowrap sm:grid-cols-2">
+                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.hr")} {formatValue(data?.vitals.HR.val ?? null, naLabel)}</div>
+                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.rr")} {formatValue(data?.vitals.RR.val ?? null, naLabel)}</div>
+                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.temp")} {formatTemp(data?.vitals.Temp.val ?? null, naLabel)}</div>
+                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.spo2")} {formatValue(data?.vitals.SpO2.val ?? null, naLabel)}</div>
+                  <div className="whitespace-nowrap">
+                    {t("sepsisRisk.vitalLabels.sbp")} {formatValue(roundNullable(data?.vitals.SBP.val ?? null), naLabel)} / {t("sepsisRisk.vitalLabels.dbp")} {formatValue(roundNullable(data?.vitals.DBP.val ?? null), naLabel)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
