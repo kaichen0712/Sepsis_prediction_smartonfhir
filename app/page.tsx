@@ -15,8 +15,16 @@ export default function Page() {
       <div className="flex h-svh flex-col overflow-hidden bg-slate-50">
         <header className="shrink-0 border-b bg-white px-6 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div />
-          <h1 className="text-2xl md:text-3xl font-semibold text-center bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent">
-            {t("header.title")}
+          <h1 className="text-2xl md:text-3xl font-semibold text-center">
+            <span className="inline-flex items-center gap-3 bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent">
+              <img
+                src="/icon.png"
+                alt=""
+                className="h-9 w-9 md:h-11 md:w-11 shrink-0"
+                aria-hidden="true"
+              />
+              {t("header.title")}
+            </span>
           </h1>
           <div className="justify-self-end">
             <LanguageSwitcher />

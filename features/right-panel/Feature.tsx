@@ -85,6 +85,7 @@ export function RightPanelFeature() {
             <SepsisRiskFeature
               scheduledEnabled={scheduledSepsisRisk}
               onScheduledChange={setScheduledSepsisRisk}
+              isActive={activeTab === "sepsisRisk"}
             />
           </div>
         </ScrollArea>

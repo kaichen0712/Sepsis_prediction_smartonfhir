@@ -9,6 +9,9 @@ import { LanguageProvider } from "@/lib/providers/LanguageProvider"
 export const metadata: Metadata = {
   title: "Medical Note · SMART on FHIR",
   description: "A modular SMART on FHIR app with clinical summary and medical note features.",
+  icons: {
+    icon: "/icon_result.ico",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

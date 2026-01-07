@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/providers/LanguageProvider"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 import type { FHIRObservation } from "@/lib/providers/ClinicalDataProvider"
 
@@ -323,9 +324,11 @@ function logVitalCategories(list: FHIRObservation[]) {
 export default function SepsisRiskFeature({
   scheduledEnabled,
   onScheduledChange,
+  isActive,
 }: {
   scheduledEnabled: boolean
   onScheduledChange: (next: boolean) => void
+  isActive: boolean
 }) {
   const { t } = useLanguage()
   const { patient, loading: patientLoading, error: patientError } = usePatient()
@@ -343,14 +346,18 @@ export default function SepsisRiskFeature({
   const [predictionError, setPredictionError] = useState<string | null>(null)
   const [hasFetched, setHasFetched] = useState(false)
   const [lastRunAt, setLastRunAt] = useState<string | null>(null)
+  const [predictionCounts, setPredictionCounts] = useState({ normal: 0, highRisk: 0 })
+  const [predictionHistory, setPredictionHistory] = useState<
+    { id: number; timeLabel: string; prediction: number | null }[]
+  >([])
   const abortRef = useRef<AbortController | null>(null)
   const requestIdRef = useRef(0)
   const lastRunAtRef = useRef(0)
-  const patientLoadingRef = useRef(false)
-  const vitalsLoadingRef = useRef(false)
-  const patientIdRef = useRef<string | null>(null)
+  const prevActiveRef = useRef(isActive)
+  const prevScheduledRef = useRef(scheduledEnabled)
+  const pendingAutoRunRef = useRef(false)
+  const historyIdRef = useRef(0)
   const naLabel = t("common.na")
-  const predictionIntervalMs = 5000
   const labelToKey = {
     HR: "HR",
     [t("vitals.hr")]: "HR",
@@ -376,12 +383,6 @@ export default function SepsisRiskFeature({
       age: ageToday,
     }
   }, [patient])
-
-  useEffect(() => {
-    patientLoadingRef.current = patientLoading
-    vitalsLoadingRef.current = vitalsLoading
-    patientIdRef.current = patientInfo?.id?.trim() ?? null
-  }, [patientLoading, vitalsLoading, patientInfo?.id])
 
   const handleFetch = async () => {
     const requestId = requestIdRef.current + 1
@@ -433,6 +434,22 @@ export default function SepsisRiskFeature({
         const modelResult = await fetchPrediction(payload, controller.signal)
         if (requestId !== requestIdRef.current) return
         setPrediction(modelResult.prediction ?? null)
+        setPredictionHistory(prev => {
+          const nextId = historyIdRef.current + 1
+          historyIdRef.current = nextId
+          const nextItem = {
+            id: nextId,
+            timeLabel: formatTimeLabel(Date.now()),
+            prediction: modelResult.prediction ?? null,
+          }
+          const next = [nextItem, ...prev]
+          return next.slice(0, 10)
+        })
+        if (modelResult.prediction === 1) {
+          setPredictionCounts(prev => ({ ...prev, highRisk: prev.highRisk + 1 }))
+        } else if (modelResult.prediction === 0) {
+          setPredictionCounts(prev => ({ ...prev, normal: prev.normal + 1 }))
+        }
       } catch (err) {
         if (requestId !== requestIdRef.current) return
         if (err instanceof DOMException && err.name === "AbortError") return
@@ -452,16 +469,26 @@ export default function SepsisRiskFeature({
   }
 
   useEffect(() => {
-    if (!scheduledEnabled) return
-    const tick = () => {
-      if (patientLoadingRef.current || vitalsLoadingRef.current) return
-      if (!patientIdRef.current) return
-      void handleFetch()
+    const wasActive = prevActiveRef.current
+    const wasScheduled = prevScheduledRef.current
+    prevActiveRef.current = isActive
+    prevScheduledRef.current = scheduledEnabled
+
+    if (!scheduledEnabled || !isActive) return
+    if (!wasActive || !wasScheduled) {
+      pendingAutoRunRef.current = true
     }
-    tick()
-    const intervalId = setInterval(tick, predictionIntervalMs)
-    return () => clearInterval(intervalId)
-  }, [scheduledEnabled, predictionIntervalMs])
+    if (!pendingAutoRunRef.current) return
+    if (patientLoading || vitalsLoading || loading) return
+    if (!patientInfo?.id?.trim()) return
+    pendingAutoRunRef.current = false
+    void handleFetch()
+  }, [isActive, scheduledEnabled, patientLoading, vitalsLoading, patientInfo?.id, loading])
+
+  useEffect(() => {
+    setPredictionCounts({ normal: 0, highRisk: 0 })
+    setPredictionHistory([])
+  }, [patientInfo?.id])
 
   const age = data ? computeAge(data.patient.birthDate, data.targetDate) : null
   const vitalsSource = pickVitalsSource(vitals, vitalSigns, observations)
@@ -484,6 +511,8 @@ export default function SepsisRiskFeature({
       : prediction === 0
       ? "border-emerald-200 bg-emerald-50 text-emerald-800"
       : "border-muted text-muted-foreground"
+  const lastHistory = predictionHistory[0] ?? null
+  const recentHistory = predictionHistory.slice(0, 5)
 
   const handleStop = () => {
     onScheduledChange(false)
@@ -515,12 +544,8 @@ export default function SepsisRiskFeature({
           {scheduledEnabled && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
-                <span className="inline-block size-2 animate-pulse rounded-full bg-emerald-500" />
+                <span className="inline-block size-2 rounded-full bg-emerald-500" />
                 {t("sepsisRisk.scheduledActive")}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block size-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" />
-                {t("sepsisRisk.scheduledRunning")}
               </span>
             </div>
           )}
@@ -574,45 +599,102 @@ export default function SepsisRiskFeature({
           </div>
 
           <div className="rounded-lg border bg-card p-4">
-            <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
-              {t("sepsisRisk.modelInputsTitle")}
+            <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-slate-900 px-2 py-1 text-white">
+              {t("sepsisRisk.predictionHistoryTitle")}
             </div>
-            <div className="mt-4 space-y-3 text-base">
-              <div className="space-y-2">
-                <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
-                  {t("sepsisRisk.patientInputs")}
+            {lastHistory ? (
+              <div className="mt-3 space-y-3">
+                <div className="rounded-md border bg-card p-3">
+                  <div className="text-xs text-muted-foreground">
+                    {t("sepsisRisk.predictionCountLabel")}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm font-semibold">
+                    <span className="rounded-full border px-2 py-1">
+                      {t("sepsisRisk.predictionCount.normal")} {predictionCounts.normal}
+                    </span>
+                    <span className="rounded-full border px-2 py-1">
+                      {t("sepsisRisk.predictionCount.highRisk")} {predictionCounts.highRisk}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {t("sepsisRisk.patientInputsDescription")}
-                </div>
-                <div>
-                  <div>{t("sepsisRisk.patientIdLabel")} {data?.patientId ?? patientInfo?.id ?? naLabel}</div>
-                  <div>{t("sepsisRisk.genderLabel")} {data?.patient.gender ?? patientInfo?.genderLabel ?? naLabel}</div>
-                  <div>{t("sepsisRisk.ageLabel")} {patientInfo?.age ?? age ?? naLabel}</div>
-                </div>
-              </div>
-              <div className="space-y-2 border-t pt-3">
-                <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
-                  {t("sepsisRisk.latestVitals")}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {t("sepsisRisk.latestVitalsDescription")}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {t("sepsisRisk.sourceLabel")} {vitalsSourceLabel} ({vitalsSource.list.length})
-                </div>
-                <div className="grid gap-2 whitespace-nowrap sm:grid-cols-2">
-                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.hr")} {formatValue(data?.vitals.HR.val ?? null, naLabel)}</div>
-                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.rr")} {formatValue(data?.vitals.RR.val ?? null, naLabel)}</div>
-                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.temp")} {formatTemp(data?.vitals.Temp.val ?? null, naLabel)}</div>
-                  <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.spo2")} {formatValue(data?.vitals.SpO2.val ?? null, naLabel)}</div>
-                  <div className="whitespace-nowrap">
-                    {t("sepsisRisk.vitalLabels.sbp")} {formatValue(roundNullable(data?.vitals.SBP.val ?? null), naLabel)} / {t("sepsisRisk.vitalLabels.dbp")} {formatValue(roundNullable(data?.vitals.DBP.val ?? null), naLabel)}
+                <div className="rounded-md border bg-card p-3">
+                  <div className="text-xs text-muted-foreground">
+                    {t("sepsisRisk.recentPredictions")}
+                  </div>
+                  <div className="mt-2 space-y-2 text-sm">
+                    {recentHistory.map(item => {
+                      const label =
+                        item.prediction === 1
+                          ? t("sepsisRisk.prediction.highRisk")
+                          : item.prediction === 0
+                          ? t("sepsisRisk.prediction.normal")
+                          : naLabel
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between rounded-md border px-2 py-1"
+                        >
+                          <span>{item.timeLabel}</span>
+                          <span className="font-semibold">{label}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-3 text-sm text-muted-foreground">
+                {t("sepsisRisk.noPredictionHistory")}
+              </div>
+            )}
           </div>
+
+          <Accordion type="single" collapsible className="rounded-lg border bg-card px-4">
+            <AccordionItem value="model-inputs" className="border-0">
+              <AccordionTrigger className="py-4">
+                <span className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+                  {t("sepsisRisk.modelInputsTitle")}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-4">
+                <div className="space-y-3 text-base">
+                  <div className="space-y-2">
+                    <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+                      {t("sepsisRisk.patientInputs")}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {t("sepsisRisk.patientInputsDescription")}
+                    </div>
+                    <div>
+                      <div>{t("sepsisRisk.patientIdLabel")} {data?.patientId ?? patientInfo?.id ?? naLabel}</div>
+                      <div>{t("sepsisRisk.genderLabel")} {data?.patient.gender ?? patientInfo?.genderLabel ?? naLabel}</div>
+                      <div>{t("sepsisRisk.ageLabel")} {patientInfo?.age ?? age ?? naLabel}</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 border-t pt-3">
+                    <div className="text-sm font-semibold inline-flex items-center gap-2 rounded-md bg-sky-50 px-2 py-1 text-slate-900 border-b-2 border-sky-300/70">
+                      {t("sepsisRisk.latestVitals")}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {t("sepsisRisk.latestVitalsDescription")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {t("sepsisRisk.sourceLabel")} {vitalsSourceLabel} ({vitalsSource.list.length})
+                    </div>
+                    <div className="grid gap-2 whitespace-nowrap sm:grid-cols-2">
+                      <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.hr")} {formatValue(data?.vitals.HR.val ?? null, naLabel)}</div>
+                      <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.rr")} {formatValue(data?.vitals.RR.val ?? null, naLabel)}</div>
+                      <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.temp")} {formatTemp(data?.vitals.Temp.val ?? null, naLabel)}</div>
+                      <div className="whitespace-nowrap">{t("sepsisRisk.vitalLabels.spo2")} {formatValue(data?.vitals.SpO2.val ?? null, naLabel)}</div>
+                      <div className="whitespace-nowrap">
+                        {t("sepsisRisk.vitalLabels.sbp")} {formatValue(roundNullable(data?.vitals.SBP.val ?? null), naLabel)} / {t("sepsisRisk.vitalLabels.dbp")} {formatValue(roundNullable(data?.vitals.DBP.val ?? null), naLabel)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       )}
     </div>
