@@ -6,11 +6,13 @@ import { PatientProvider } from "@/lib/providers/PatientProvider"
 import { ClinicalDataProvider } from "@/lib/providers/ClinicalDataProvider"
 import { LanguageProvider } from "@/lib/providers/LanguageProvider"
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+
 export const metadata: Metadata = {
   title: "Medical Note · SMART on FHIR",
   description: "A modular SMART on FHIR app with clinical summary and medical note features.",
   icons: {
-    icon: "/icon_result.ico",
+    icon: `${basePath}/icon_result.ico`,
   },
 }
 

@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
 
   // GitHub Pages 上 Next/Image 需要關閉最佳化
   images: { unoptimized: true },
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isGhPages ? `/${repoName}` : "",
+  },
 
   // 只有 GH Pages 才需要 basePath / assetPrefix
   ...(isGhPages

@@ -9,6 +9,7 @@ import { useLanguage } from "@/lib/providers/LanguageProvider"
 
 export default function Page() {
   const { t } = useLanguage()
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
 
   return (
     <PatientProvider>
@@ -18,7 +19,7 @@ export default function Page() {
           <h1 className="text-2xl md:text-3xl font-semibold text-center">
             <span className="inline-flex items-center gap-3 bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent">
               <img
-                src="/icon.png"
+                src={`${basePath}/icon.png`}
                 alt=""
                 className="h-9 w-9 md:h-11 md:w-11 shrink-0"
                 aria-hidden="true"
