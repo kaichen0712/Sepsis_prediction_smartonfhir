@@ -460,17 +460,6 @@ async function handleWhisperRequest(audioBlob: Blob) {
 }
 ```
 
-#### 支援的音訊格式
-- WebM
-- MP3
-- MP4
-- MPEG
-- MPGA
-- M4A
-- WAV
-- 最大檔案大小: 25 MB
-
----
 
 ### 4. OpenAI Chat Completions API (GPT 摘要)
 
