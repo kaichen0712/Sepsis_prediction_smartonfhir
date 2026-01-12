@@ -1086,7 +1086,7 @@ Sepsis_prediction_smartonfhir/
 **原專案連結**: https://github.com/voho0000/medical-note-smart-on-fhir/tree/master
 
 
-本專案預測敗血症模型由楊智傑醫師團隊提供。
+本專案敗血症風險預測模型由楊智傑醫師團隊提供。感謝其於模型提供、臨床意義解讀與導入建議等面向之支持，促使本系統能兼顧技術可行性與臨床實用性。
 
 **相關文獻** : https://www.sciencedirect.com/science/article/pii/S2666521225000468
 
