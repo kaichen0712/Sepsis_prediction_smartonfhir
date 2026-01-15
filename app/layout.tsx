@@ -9,8 +9,8 @@ import { LanguageProvider } from "@/lib/providers/LanguageProvider"
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
 
 export const metadata: Metadata = {
-  title: "Medical Note · SMART on FHIR",
-  description: "A modular SMART on FHIR app with clinical summary and medical note features.",
+  title: "SepsisProbe · SMART on FHIR",
+  description: "SepsisProbe: Plug-and-Play Sepsis Early Warning System on FHIR",
   icons: {
     icon: `${basePath}/icon_result.ico`,
   },

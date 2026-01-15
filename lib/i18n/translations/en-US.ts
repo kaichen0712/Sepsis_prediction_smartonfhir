@@ -9,7 +9,7 @@
     separator: " · ",
   },
   header: {
-    title: "AI Sepsis Risk Early Warning Platform",
+    title: "SepsisProbe: Plug-and-Play Sepsis Early Warning System on FHIR",
   },
   tabs: {
     medicalNote: "Medical Note",

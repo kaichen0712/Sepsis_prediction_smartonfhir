@@ -1,4 +1,4 @@
-# AI即時敗血症風險預測系統 (Sepsis Risk Prediction System)
+# SepsisProbe：FHIR隨插即用的敗血症早期預警系統 (SepsisProbe: Plug-and-Play Sepsis Early Warning System on FHIR)
 
 ## 專案簡介
 

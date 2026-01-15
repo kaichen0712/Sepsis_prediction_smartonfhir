@@ -9,7 +9,7 @@
     separator: " · ",
   },
   header: {
-    title: "AI即時敗血症風險預警平台",
+    title: "SepsisProbe：FHIR隨插即用的敗血症早期預警系統",
   },
   tabs: {
     medicalNote: "病歷摘要",
