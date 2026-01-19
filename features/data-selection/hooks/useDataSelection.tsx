@@ -1,7 +1,7 @@
 // features/data-selection/hooks/useDataSelection.ts
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { createContext, useContext, useState, useEffect, useCallback } from "react"
 
 export type DataType = 'conditions' | 'medications' | 'allergies' | 'diagnosticReports' | 'observations'
 
@@ -101,7 +101,20 @@ const getInitialFilters = (): DataFilters => {
   }
 }
 
-export function useDataSelection() {
+type DataSelectionContextValue = {
+  selectedData: DataSelection
+  setSelectedData: React.Dispatch<React.SetStateAction<DataSelection>>
+  updateSelection: (dataType: DataType, isSelected: boolean) => void
+  setSelection: (newSelection: Partial<DataSelection>) => void
+  resetToDefaults: () => void
+  filters: DataFilters
+  setFilters: React.Dispatch<React.SetStateAction<DataFilters>>
+  isAnySelected: boolean
+}
+
+const DataSelectionContext = createContext<DataSelectionContextValue | null>(null)
+
+function useDataSelectionState(): DataSelectionContextValue {
   const [selectedData, setSelectedData] = useState<DataSelection>(getInitialSelection)
   const [filters, setFilters] = useState<DataFilters>(getInitialFilters)
 
@@ -159,4 +172,19 @@ export function useDataSelection() {
     setFilters,
     isAnySelected: Object.values(selectedData).some(Boolean)
   }
+}
+
+export function DataSelectionProvider({ children }: { children: React.ReactNode }) {
+  const value = useDataSelectionState()
+  return (
+    <DataSelectionContext.Provider value={value}>
+      {children}
+    </DataSelectionContext.Provider>
+  )
+}
+
+export function useDataSelection() {
+  const ctx = useContext(DataSelectionContext)
+  if (!ctx) throw new Error("useDataSelection must be used inside <DataSelectionProvider>")
+  return ctx
 }

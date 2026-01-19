@@ -9,7 +9,7 @@ import { useApiKey } from "@/lib/providers/ApiKeyProvider"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
 import { useNote } from "../providers/NoteProvider"
 
-export function AsrPanel() {
+export function AsrPanel({ embedded = false }: { embedded?: boolean }) {
   const { t } = useLanguage()
   const { asrText, setAsrText } = useNote()
   const { apiKey } = useApiKey()
@@ -58,60 +58,73 @@ export function AsrPanel() {
     [apiKey, setAsrText, t]
   )
 
+  const body = (
+    <div className="space-y-3">
+      <ReactMediaRecorder
+        audio
+        onStop={async (_url, blob) => {
+          setIsRecording(false)
+          stopTimer()
+          setSeconds(0)
+          await handleWhisperRequest(blob)
+        }}
+        render={({ startRecording, stopRecording }) => (
+          <div className="flex items-center gap-3">
+            {isRecording ? (
+              <>
+                <Button variant="destructive" onClick={stopRecording}>
+                  {t("medicalNote.stopRecording")}
+                </Button>
+                <span className="text-sm tabular-nums">
+                  {t("medicalNote.recordingLabel")} {seconds}s
+                </span>
+              </>
+            ) : (
+              <Button
+                onClick={() => {
+                  if (!apiKey) {
+                    alert(t("medicalNote.apiKeyRequiredShort"))
+                    return
+                  }
+                  setIsRecording(true)
+                  setSeconds(0)
+                  startTimer()
+                  startRecording()
+                }}
+              >
+                {t("medicalNote.startRecording")}
+              </Button>
+            )}
+            {isLoading && (
+              <span className="text-sm text-muted-foreground">{t("medicalNote.transcribing")}</span>
+            )}
+          </div>
+        )}
+      />
+      <Textarea
+        value={asrText}
+        onChange={(e) => setAsrText(e.target.value)}
+        className="min-h-[60px]"
+        spellCheck={false}
+      />
+    </div>
+  )
+
+  if (embedded) {
+    return (
+      <div className="space-y-2">
+        <div className="text-sm font-semibold text-slate-900">{t("medicalNote.asrTitle")}</div>
+        {body}
+      </div>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-slate-900 font-semibold">{t("medicalNote.asrTitle")}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <ReactMediaRecorder
-          audio
-          onStop={async (_url, blob) => {
-            setIsRecording(false)
-            stopTimer()
-            setSeconds(0)
-            await handleWhisperRequest(blob)
-          }}
-          render={({ startRecording, stopRecording }) => (
-            <div className="flex items-center gap-3">
-              {isRecording ? (
-                <>
-                  <Button variant="destructive" onClick={stopRecording}>
-                    {t("medicalNote.stopRecording")}
-                  </Button>
-                  <span className="text-sm tabular-nums">
-                    {t("medicalNote.recordingLabel")} {seconds}s
-                  </span>
-                </>
-              ) : (
-                <Button
-                  onClick={() => {
-                    if (!apiKey) {
-                      alert(t("medicalNote.apiKeyRequiredShort"))
-                      return
-                    }
-                    setIsRecording(true)
-                    setSeconds(0)
-                    startTimer()
-                    startRecording()
-                  }}
-                >
-                  {t("medicalNote.startRecording")}
-                </Button>
-              )}
-              {isLoading && (
-                <span className="text-sm text-muted-foreground">{t("medicalNote.transcribing")}</span>
-              )}
-            </div>
-          )}
-        />
-        <Textarea
-          value={asrText}
-          onChange={(e) => setAsrText(e.target.value)}
-          className="min-h-[60px]"
-          spellCheck={false}
-        />
-      </CardContent>
+      <CardContent className="space-y-3">{body}</CardContent>
     </Card>
   )
 }

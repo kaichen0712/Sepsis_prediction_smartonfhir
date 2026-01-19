@@ -8,7 +8,7 @@ import MedicalNoteFeature from "@/features/medical-note/Feature"
 import SepsisRiskFeature from "@/features/sepsis-risk/Feature"
 import { DataSelectionPanel } from "@/features/data-selection/components/DataSelectionPanel"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
-import { useDataSelection, DataSelection } from "@/features/data-selection/hooks/useDataSelection"
+import { useDataSelection, DataSelection } from "@/features/data-selection/hooks/useDataSelection.tsx"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
 
 // Define the expected shape of the clinical data
@@ -51,7 +51,7 @@ export function RightPanelFeature() {
         <TabsTrigger value="dataSelection">{t("tabs.dataSelection")}</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="medicalNote" className="flex-1 mt-0 pt-4">
+      <TabsContent value="medicalNote" className="flex-1 mt-0 pt-4" forceMount>
         <ScrollArea className="h-full pr-2">
           <div className="space-y-4">
             <MedicalNoteFeature />

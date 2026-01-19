@@ -4,13 +4,10 @@ import {
   createContext,
   useContext,
   useMemo,
-  useRef,
   useState,
-  useEffect,
   type Dispatch,
   type SetStateAction,
 } from "react"
-import { useLanguage } from "@/lib/providers/LanguageProvider"
 
 type Ctx = {
   asrText: string
@@ -26,21 +23,10 @@ type Ctx = {
 const NoteContext = createContext<Ctx | null>(null)
 
 export function NoteProvider({ children }: { children: React.ReactNode }) {
-  const { t } = useLanguage()
-  const defaultPrompt = t("medicalNote.defaultPrompt")
-  const defaultPromptRef = useRef(defaultPrompt)
-
   const [asrText, setAsrText] = useState("")
-  const [prompt, setPrompt] = useState(defaultPrompt)
+  const [prompt, setPrompt] = useState("")
   const [gptResponse, setGptResponse] = useState("")
   const [model, setModel] = useState("gpt-4.1")
-
-  useEffect(() => {
-    if (prompt === defaultPromptRef.current) {
-      setPrompt(defaultPrompt)
-    }
-    defaultPromptRef.current = defaultPrompt
-  }, [defaultPrompt, prompt])
 
   const value: Ctx = useMemo(
     () => ({

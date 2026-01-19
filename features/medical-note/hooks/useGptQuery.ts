@@ -1,7 +1,7 @@
 // features/medical-note/hooks/useGptQuery.ts
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { useApiKey } from "@/lib/providers/ApiKeyProvider"
 
 type GptMessage = {
@@ -28,6 +28,7 @@ export function useGptQuery(options: UseGptQueryOptions = {}) {
   const [response, setResponse] = useState("")
   const [model, setModel] = useState(defaultModel)
   const [progress, setProgress] = useState(0)
+  const controllerRef = useRef<AbortController | null>(null)
 
   const queryGpt = useCallback(async (messages: GptMessage[], customModel?: string) => {
     if (!apiKey) {
@@ -44,6 +45,8 @@ export function useGptQuery(options: UseGptQueryOptions = {}) {
 
     // Create a controller for the fetch request to support timeouts
     const controller = new AbortController()
+    controllerRef.current?.abort()
+    controllerRef.current = controller
     const timeoutId = setTimeout(() => {
       controller.abort("Request timed out. Please try again.")
     }, timeout)
@@ -135,15 +138,14 @@ export function useGptQuery(options: UseGptQueryOptions = {}) {
       setError(error)
       throw error
     } finally {
+      if (controllerRef.current === controller) {
+        controllerRef.current = null
+      }
       clearTimeout(timeoutId)
       setIsLoading(false)
       
       // Reset progress after a short delay to show completion
       const timer = setTimeout(() => setProgress(0), 500)
-      
-      // Don't return anything from finally block
-      // The cleanup will happen when the component unmounts
-      return undefined
     }
   }, [apiKey, model, initialMessages, timeout])
 
@@ -154,6 +156,8 @@ export function useGptQuery(options: UseGptQueryOptions = {}) {
     error,
     model,
     setModel,
-    progress
+    progress,
+    setResponse,
+    cancel: () => controllerRef.current?.abort()
   }
 }
