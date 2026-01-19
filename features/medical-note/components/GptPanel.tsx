@@ -1,20 +1,27 @@
 ﻿// features/medical-note/components/GptPanel.tsx
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ReactMediaRecorder } from "react-media-recorder"
-import { Database, MessageCircle, Mic, Square, Trash2 } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Database, MessageCircle, Trash2 } from "lucide-react"
 import { useNote } from "../providers/NoteProvider"
 import { usePatient } from "@/lib/providers/PatientProvider"
 import { useApiKey } from "@/lib/providers/ApiKeyProvider"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
 import { useGptQuery } from "../hooks/useGptQuery"
 import { useClinicalContext } from "@/features/data-selection/hooks/useClinicalContext"
+
+const VoiceInput = dynamic(
+  () => import("./VoiceInput").then(m => m.VoiceInput),
+  {
+    ssr: false,
+    loading: () => <div className="rounded-md border p-3 text-sm text-muted-foreground">Loading...</div>,
+  }
+)
 
 type PatientLite = {
   name?: { given?: string[]; family?: string }[]
@@ -53,11 +60,10 @@ export function GptPanel({
   const { prompt, setPrompt, model, setGptResponse } = useNote()
   const { getFormattedClinicalContext } = useClinicalContext()
 
-  const { queryGpt, isLoading, error, setResponse: setGptQueryResponse, cancel: cancelGpt } = useGptQuery({
+  const { queryGpt, isLoading, setResponse: setGptQueryResponse, cancel: cancelGpt } = useGptQuery({
     defaultModel: defaultModel,
   })
   const { apiKey } = useApiKey()
-  const [isTranscribing, setIsTranscribing] = useState(false)
   const [insertNotice, setInsertNotice] = useState("")
   const [useLiterature, setUseLiterature] = useState(false)
   const [literatureItems, setLiteratureItems] = useState<
@@ -244,37 +250,6 @@ export function GptPanel({
     }
   }
 
-  const handleWhisperRequest = useCallback(
-    async (audioBlob: Blob) => {
-      if (!apiKey) {
-        alert(t("medicalNote.apiKeyRequired"))
-        return
-      }
-      setIsTranscribing(true)
-      const fd = new FormData()
-      fd.append("file", audioBlob, "audio.webm")
-      fd.append("model", "whisper-1")
-      try {
-        const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}` },
-          body: fd,
-        })
-        const j = await r.json()
-        const raw = (j?.text || "").trim()
-        const cleaned = raw.replace(/\s+/g, " ").trim()
-        if (cleaned) {
-          setPrompt(prev => (prev ? `${prev} ${cleaned}` : cleaned))
-        }
-      } catch {
-        // Keep silent; user can retry.
-      } finally {
-        setIsTranscribing(false)
-      }
-    },
-    [apiKey, setPrompt, t]
-  )
-
   const body = (
     <div className="space-y-3">
       <div className="rounded-md border bg-white p-4 space-y-3 h-72 overflow-y-auto resize-y min-h-[220px] max-h-[520px]">
@@ -400,47 +375,14 @@ export function GptPanel({
       {insertNotice ? (
         <div className="text-xs text-amber-700">{insertNotice}</div>
       ) : null}
-      <ReactMediaRecorder
-        audio
-        onStop={async (_url, blob) => {
-          await handleWhisperRequest(blob)
-        }}
-        render={({ startRecording, stopRecording, status }) => (
-          <div className="flex items-end gap-2">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  void handleGptRequest()
-                }
-              }}
-              placeholder={t("medicalNote.inputPlaceholder")}
-              className="min-h-[44px] resize-none"
-              rows={2}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (status === "recording") {
-                  stopRecording()
-                } else {
-                  if (!validateApiKey()) return
-                  startRecording()
-                }
-              }}
-              aria-label={t("medicalNote.startRecording")}
-              disabled={isTranscribing}
-            >
-              {status === "recording" ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-            <Button onClick={handleGptRequest} disabled={isLoading}>
-              {isLoading ? t("medicalNote.gptGenerating") : t("medicalNote.gptGenerate")}
-            </Button>
-          </div>
-        )}
+      <VoiceInput
+        value={prompt}
+        onChange={setPrompt}
+        onSubmit={handleGptRequest}
+        placeholder={t("medicalNote.inputPlaceholder")}
+        apiKey={apiKey}
+        t={t}
+        disabled={isLoading}
       />
     </div>
   )
