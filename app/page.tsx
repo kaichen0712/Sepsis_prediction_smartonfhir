@@ -6,7 +6,7 @@ import ClinicalSummaryFeature from "@/features/clinical-summary/Feature"
 import { RightPanelFeature } from "@/features/right-panel/Feature"
 import { PatientProvider } from "@/lib/providers/PatientProvider"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
-import { DataSelectionProvider } from "@/features/data-selection/hooks/useDataSelection.tsx"
+import { DataSelectionProvider } from "@/features/data-selection/hooks/useDataSelection"
 
 export default function Page() {
   const { t } = useLanguage()

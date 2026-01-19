@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import { DataType, DataSelection, DataFilters } from "../hooks/useDataSelection.tsx"
+import { DataType, DataSelection, DataFilters } from "../hooks/useDataSelection"
 
 type ClinicalData = {
   conditions: any[]

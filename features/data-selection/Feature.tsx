@@ -4,7 +4,7 @@
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
 import { DataSelectionPanel } from "./components/DataSelectionPanel"
-import { useDataSelection } from "./hooks/useDataSelection.tsx"
+import { useDataSelection } from "./hooks/useDataSelection"
 
 type ClinicalData = {
   diagnoses?: any[]

@@ -1,7 +1,7 @@
 // features/data-selection/hooks/useClinicalContext.ts
 "use client";
 
-import { useDataSelection } from "@/features/data-selection/hooks/useDataSelection.tsx";
+import { useDataSelection } from "@/features/data-selection/hooks/useDataSelection";
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider";
 
 /**

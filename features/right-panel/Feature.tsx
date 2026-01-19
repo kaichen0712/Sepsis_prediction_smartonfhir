@@ -8,7 +8,7 @@ import MedicalNoteFeature from "@/features/medical-note/Feature"
 import SepsisRiskFeature from "@/features/sepsis-risk/Feature"
 import { DataSelectionPanel } from "@/features/data-selection/components/DataSelectionPanel"
 import { useClinicalData } from "@/lib/providers/ClinicalDataProvider"
-import { useDataSelection, DataSelection } from "@/features/data-selection/hooks/useDataSelection.tsx"
+import { useDataSelection, DataSelection } from "@/features/data-selection/hooks/useDataSelection"
 import { useLanguage } from "@/lib/providers/LanguageProvider"
 
 // Define the expected shape of the clinical data
