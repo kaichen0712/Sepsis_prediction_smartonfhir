@@ -5,6 +5,7 @@ import { ReactMediaRecorder } from "react-media-recorder"
 import { Mic, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import type { TranslationKey } from "@/lib/i18n/i18n.config"
 
 type Props = {
   value: string
@@ -12,7 +13,7 @@ type Props = {
   onSubmit: () => void
   placeholder: string
   apiKey: string
-  t: (key: string) => string
+  t: (key: TranslationKey) => string
   disabled?: boolean
 }
 
